@@ -42,8 +42,8 @@ int strlen(char *a)
   return i;
 }
 
+/* Wrapper de la Syscall Write */
 int write (int fd, char *buffer, int size) {
-	/* Wrapper de la Syscall Write */
 	int ret;
 	__asm__ volatile( 
 					"int $0x80"
@@ -60,8 +60,8 @@ int write (int fd, char *buffer, int size) {
 	return ret;
 }
 
+/* Wrapper de la Syscall Gettime */
 int gettime(int *time) {
-	/* Wrapper de la Syscall Gettime */
 		int ret;
 	__asm__ volatile( 
 					"int $0x80"

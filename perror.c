@@ -15,11 +15,10 @@ char *sys_errlist[] = {
 
 };
 
-int sys_nerr = 6;
+int sys_nerr = 6; // Max number
 
 void perror(char *s) {
 	char *cp = sys_errlist[errno];
-	// Potser canal de sortida 2 (std output error)
 	if (errno < 0 || errno > sys_nerr) cp = "Unknown error";
 	if (s != NULL) {
 		write(1,s,strlen(s));

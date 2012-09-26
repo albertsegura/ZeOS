@@ -8,7 +8,7 @@
 #include <io.h>
 
 #include <zeos_interrupt.h>
-#include <system.h> // Revisar
+#include <system.h>
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
@@ -16,11 +16,11 @@ Register    idtR;
 char char_map[] =
 {
   '\0','\0','1','2','3','4','5','6',
-  '7','8','9','0','\'','¡','\0','\0',
+  '7','8','9','0','\'','ï¿½','\0','\0',
   'q','w','e','r','t','y','u','i',
   'o','p','`','+','\0','\0','a','s',
-  'd','f','g','h','j','k','l','ñ',
-  '\0','º','\0','ç','z','x','c','v',
+  'd','f','g','h','j','k','l','ï¿½',
+  '\0','ï¿½','\0','ï¿½','z','x','c','v',
   'b','n','m',',','.','-','\0','*',
   '\0','\0','\0','\0','\0','\0','\0','\0',
   '\0','\0','\0','\0','\0','\0','\0','7',
@@ -77,7 +77,7 @@ void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
 
 void setIdt()
 {
-  /* Program interrups/exception service routines */
+  /* Program interrupts/exception service routines */
   idtR.base  = (DWord)idt;
   idtR.limit = IDT_ENTRIES * sizeof(Gate) - 1;
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR (IDT)*/
@@ -105,7 +105,7 @@ void keyboard_routine() {
 	/* Primer bit indica Make(0)/Break(1) => key (Pressed/Relased)*/
 	if (read < 0xF0){ // Make
 		
-		keyPressed = char_map[read]; // Conversió de la lectura a char
+		keyPressed = char_map[read]; // ConversiÃ³ de la lectura a char
 		printc_xy(0,0,keyPressed);
 		
 	}
