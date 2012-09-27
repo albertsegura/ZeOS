@@ -103,14 +103,14 @@ void keyboard_routine() {
 	char keyPressed;
 	
 	/* Primer bit indica Make(0)/Break(1) => key (Pressed/Relased)*/
-	if (read < 0xF0){ // Make
-		
-		keyPressed = char_map[read]; // ConversiÃ³ de la lectura a char
+	if (read < 0x80){ // Make
+
+		keyPressed = char_map[read]; // Conversió de la lectura a char
 		printc_xy(0,0,keyPressed);
 		
 	}
 	else { // Break
-	
+
 	}
 }
 
