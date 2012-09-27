@@ -54,11 +54,6 @@ main(void) {
 	acum = outer(count);
 	int resul = add(4,2);*/
 	
-	while (1) {
-		time = gettime();
-		write(1," Gettime: ",10);
-		itoa(time,timec);
-		write(1,timec,strlen(timec));
-	}
+	while (1);
 	return 0;
 }
