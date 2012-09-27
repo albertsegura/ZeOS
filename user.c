@@ -43,15 +43,10 @@ main(void) {
 	int ret = write(1,"Hola mon!",9);
 	if (ret == -1) perror("Error d'escriptura");
 	
-	ret = gettime(&time);
-	if (ret == -1) {
-		perror("Error al obtenir el temps");
-	}
-	else {	
-		write(1," Gettime: ",10);
-		itoa(time,timec);
-		write(1,timec,strlen(timec));
-	}
+	time = gettime();
+	write(1," Gettime: ",10);
+	itoa(time,timec);
+	write(1,timec,strlen(timec));
 	
 	/*	long count, acum;
 	count = 75;
@@ -59,6 +54,11 @@ main(void) {
 	acum = outer(count);
 	int resul = add(4,2);*/
 	
-	while (1);
+	while (1) {
+		time = gettime();
+		write(1," Gettime: ",10);
+		itoa(time,timec);
+		write(1,timec,strlen(timec));
+	}
 	return 0;
 }

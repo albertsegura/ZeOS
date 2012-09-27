@@ -70,13 +70,9 @@ int sys_write(int fd, char * buffer, int size) {
 	return 0;
 }
 
-int sys_gettime(int *time) {
-
-	if (access_ok(VERIFY_WRITE, time, 4) == 0) return -6;
+int sys_gettime() {
 	
-	copy_to_user(&zeos_ticks, time, 4);
-	return 0;
-
+	return zeos_ticks;
 }
 
 

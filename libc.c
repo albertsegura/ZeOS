@@ -61,22 +61,14 @@ int write (int fd, char *buffer, int size) {
 }
 
 /* Wrapper de la Syscall Gettime */
-int gettime(int *time) {
+int gettime() {
 		int ret;
 	__asm__ volatile( 
 					"int $0x80"
-				:"=a" (ret), 		// resultat de %eax a ret
-				"+b" (time)
+				:"=a" (ret) 		// resultat de %eax a ret
 				:"a"  (10)
 				);
-	if (ret < 0) {
-		errno = -ret;
-		ret = -1;
-	}
 	return ret;
-	
-	
-
 }
 
 
