@@ -44,9 +44,11 @@ main(void) {
 	if (ret == -1) perror("Error d'escriptura");
 	
 	time = gettime();
-	write(1," Gettime: ",10);
+	ret = write(1," Gettime: ",10);
+	if (ret == -1) perror("Error d'escriptura");
 	itoa(time,timec);
-	write(1,timec,strlen(timec));
+	ret = write(1,timec,strlen(timec));
+	if (ret == -1) perror("Error d'escriptura");
 	
 	/*	long count, acum;
 	count = 75;
