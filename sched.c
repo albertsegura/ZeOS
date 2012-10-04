@@ -88,14 +88,18 @@ void init_readyqueue (void) {
 
 /* No comprova que la llista no es buida perque, al inici es compleix */
 void init_idle (void) {
-	struct list_head *idle_list_pointer = list_first(freequeue);
+	struct list_head *idle_list_pointer = list_first(&freequeue);
 	list_del(idle_list_pointer);
 	idle_task = list_head_to_task_struct(idle_list_pointer);
 
+	struct task_union *idle_union_stack = idle_task; // Saber si es correcte.
+
 	idle_task->PID = 0;
-	// TODO
+	// TODO push de @ret de cpu_idle i fer el dinamic link
 	// Punt 3 (pag 32): Initialize an execution context for the procees to restore it when it gets assigned the cpu
 	//				(see section 4.5) and executes cpu_idle.
+
+
 
 	/*1) Store in the stack of the idle process the address of the code that it will execute (address
 			of the cpu_idle function).

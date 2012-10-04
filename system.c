@@ -57,7 +57,7 @@ inline void set_seg_regs(Word data_sel, Word stack_sel, DWord esp)
 }
 
 /*
- *   Main entry point to ZEOS Operatin System 
+ *   Main entry point to ZEOS Operating System
  */
 
 int __attribute__((__section__(".text.main"))) 

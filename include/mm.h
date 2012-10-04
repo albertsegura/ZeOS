@@ -1,5 +1,5 @@
 /*
- * mm.h - CapÃ§alera del mÃ²dul de gestiÃ³ de memÃ²ria
+ * mm.h - Capçalera del módul de gestió de memoria
  */
 
 #ifndef __MM_H__
