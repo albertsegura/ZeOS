@@ -69,6 +69,19 @@ void init_readyqueue (void) {
 }
 
 void init_idle (void) {
+// Pagina 32
+/*
+	1) Get an available task_union from the freequeue to contain the characteristics of this process
+	2) Assign PID 0 to the process.
+	3) Initialize an execution context for the procees to restore it when it gets assigned the cpu
+	(see section 4.5) and executes cpu_idle.
+	4) Define a global variable idle_task
+	struct task_struct * idle_task;
+	5) Initialize the global variable idle_task, which will help to get easily the task_struct of the
+	idle process.
+*/
+
+
 
 }
 
