@@ -92,9 +92,10 @@ void init_idle (void) {
 	list_del(idle_list_pointer);
 	idle_task = list_head_to_task_struct(idle_list_pointer);
 
-	struct task_union *idle_union_stack = idle_task; // Saber si es correcte.
+	struct task_union *idle_union_stack = idle_task;
 
 	idle_task->PID = 0;
+	idle_union_stack->stack[1023] = &cpu_idle; // ?
 	// TODO push de @ret de cpu_idle i fer el dinamic link
 	// Punt 3 (pag 32): Initialize an execution context for the procees to restore it when it gets assigned the cpu
 	//				(see section 4.5) and executes cpu_idle.
