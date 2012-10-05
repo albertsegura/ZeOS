@@ -92,44 +92,46 @@ void init_idle (void) {
 	list_del(idle_list_pointer);
 	idle_task = list_head_to_task_struct(idle_list_pointer);
 
-	struct task_union *idle_union_stack = idle_task;
+	union task_union *idle_union_stack = (union task_union*)idle_task;
 
+	// TODO Preguntar errors compilació
 	idle_task->PID = 0;
-	idle_union_stack->stack[1023] = &cpu_idle; // ?
-	// TODO push de @ret de cpu_idle i fer el dinamic link
-	// Punt 3 (pag 32): Initialize an execution context for the procees to restore it when it gets assigned the cpu
-	//				(see section 4.5) and executes cpu_idle.
-
-
-
-	/*1) Store in the stack of the idle process the address of the code that it will execute (address
-			of the cpu_idle function).
-		2) Store in the stack the value that we want to assign to register ebp when undoing the
-			dynamic link (it can be 0),
-		3) Finally, we need to keep for this process (in a field of its task_struct) the value to load
-			in the esp register when undoing the dynamic link (in this case this value will point to
-			the position of the stack where we have stored the initial value for the ebp register).
-	 */
-
-
+	idle_union_stack->stack[1023] = &cpu_idle;
+	idle_union_stack->stack[1022] = 0;
+	idle_union_stack->task.dir_pages_baseAddr->kernel_esp = &idle_union_stack->stack[1022];
 }
 
 void init_task1(void) {
+	struct list_head *task1_list_pointer = list_first(&freequeue);
+	list_del(task1_list_pointer);
+	struct task_struct * task1_task_struct = list_head_to_task_struct(task1_list_pointer);
 
-	/*1) Assign PID 1 to the process
-		2) Complete the initialization of its address space, by using the function set_user_pages (see file
-			mm.c). This function allocates physical pages to hold the user address space (both code and
-			data pages) and adds to the page table the logical-to-physical translation for these pages.
-			Remind that the region that supports the kernel address space is already configure for all
-			the possible processes by the function init_mm.
-		3) Set its page directory as the current page directory in the system, by using the set_cr3
-			function (see file mm.c).
-	 */
+	task1_task_struct->PID = 1;
+	set_user_pages(task1_task_struct);
+	set_cr3(task1_task_struct->dir_pages_baseAddr);
 }
 
 
 void init_sched() {
 
+}
+
+
+void task_switch(union task_union *new) {
+
+	tss.
+	/*
+		1) Update the TSS to make it point to the new_task system stack.
+		2) Change the user address space by updating the current page directory: use the set_cr3
+			funtion to set the cr3 register to point to the page directory of the new_task.
+		3) Store, in the PCB, the current value of the EBP register (corresponding to the position in the
+			current system stack where this routine begins).
+		4) Change the current system stack by setting ESP register to point to the stored value in the
+			new PCB.
+		5) Restore the EBP register from the stack.
+		6) RET.
+
+	 */
 }
 
 struct task_struct *list_head_to_task_struct(struct list_head *l) {

@@ -149,6 +149,7 @@ typedef union
     unsigned int avail    : 3;
     unsigned int pbase_addr : 20;
   } bits;
+  unsigned int kernel_esp;
 } page_table_entry;
 
 

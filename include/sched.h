@@ -46,7 +46,7 @@ void init_sched(void);
 
 struct task_struct * current();
 
-void task_switch(union task_union*t, int need_eoi);
+void task_switch(union task_union *new);
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
