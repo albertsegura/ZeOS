@@ -119,7 +119,9 @@ void init_sched() {
 
 void task_switch(union task_union *new) {
 
-	tss.
+	tss.esp0 = &new->stack[1023]; // o 1024?
+	set_cr3(new->task.dir_pages_baseAddr);
+
 	/*
 		1) Update the TSS to make it point to the new_task system stack.
 		2) Change the user address space by updating the current page directory: use the set_cr3
