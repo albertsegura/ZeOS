@@ -150,6 +150,7 @@ typedef union
     unsigned int pbase_addr : 20;
   } bits;
   unsigned int kernel_esp;
+  unsigned int kernel_ebp;
 } page_table_entry;
 
 

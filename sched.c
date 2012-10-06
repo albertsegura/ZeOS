@@ -94,7 +94,6 @@ void init_idle (void) {
 
 	union task_union *idle_union_stack = (union task_union*)idle_task;
 
-	// TODO Preguntar errors compilació
 	idle_task->PID = 0;
 	idle_union_stack->stack[1023] = &cpu_idle;
 	idle_union_stack->stack[1022] = 0;
@@ -118,9 +117,21 @@ void init_sched() {
 
 
 void task_switch(union task_union *new) {
-
+	// Falta revisar si esta bé, i comprovar el funcionament
 	tss.esp0 = &new->stack[1023]; // o 1024?
 	set_cr3(new->task.dir_pages_baseAddr);
+	struct task_struct * current_task_struct = current();
+	unsigned int *kernel_ebp = &current_task_struct->dir_pages_baseAddr->kernel_ebp;
+	unsigned int *new_kernel_esp = &(new)->task->dir_pages_baseAddr->kernel_esp;
+
+  __asm__ __volatile__(
+  		"mov %%ebp,(%0)",
+  		"mov (%1),%%esp",
+  		"ret"
+  		: /* no output */
+  		: "r" (kernel_ebp), "r" (new_kernel_esp)
+  );
+
 
 	/*
 		1) Update the TSS to make it point to the new_task system stack.
