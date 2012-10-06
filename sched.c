@@ -95,9 +95,9 @@ void init_idle (void) {
 	union task_union *idle_union_stack = (union task_union*)idle_task;
 
 	idle_task->PID = 0;
-	idle_union_stack->stack[1023] = &cpu_idle;
+	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[1022] = 0;
-	idle_union_stack->task.dir_pages_baseAddr->kernel_esp = &idle_union_stack->stack[1022];
+	idle_union_stack->task.dir_pages_baseAddr->kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
 }
 
 void init_task1(void) {
@@ -118,33 +118,21 @@ void init_sched() {
 
 void task_switch(union task_union *new) {
 	// Falta revisar si esta bé, i comprovar el funcionament
-	tss.esp0 = &new->stack[1023]; // o 1024?
+	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?
 	set_cr3(new->task.dir_pages_baseAddr);
 	struct task_struct * current_task_struct = current();
-	unsigned int *kernel_ebp = &current_task_struct->dir_pages_baseAddr->kernel_ebp;
-	unsigned int *new_kernel_esp = &(new)->task->dir_pages_baseAddr->kernel_esp;
+	unsigned long *kernel_ebp = &current_task_struct->dir_pages_baseAddr->kernel_ebp;
+	unsigned long new_kernel_esp = new->task.dir_pages_baseAddr->kernel_esp;
+	unsigned long *new_kernel_ebp = &new->task.dir_pages_baseAddr->kernel_ebp;
 
   __asm__ __volatile__(
-  		"mov %%ebp,(%0)",
-  		"mov (%1),%%esp",
-  		"ret"
+  		"mov %%ebp,(%0);"
+  		"mov %1,%%esp;"
+  		"mov (%2), %%ebp;"
+  		"ret;"
   		: /* no output */
-  		: "r" (kernel_ebp), "r" (new_kernel_esp)
+  		: "r" (kernel_ebp), "r" (new_kernel_esp), "r" (new_kernel_ebp)
   );
-
-
-	/*
-		1) Update the TSS to make it point to the new_task system stack.
-		2) Change the user address space by updating the current page directory: use the set_cr3
-			funtion to set the cr3 register to point to the page directory of the new_task.
-		3) Store, in the PCB, the current value of the EBP register (corresponding to the position in the
-			current system stack where this routine begins).
-		4) Change the current system stack by setting ESP register to point to the stored value in the
-			new PCB.
-		5) Restore the EBP register from the stack.
-		6) RET.
-
-	 */
 }
 
 struct task_struct *list_head_to_task_struct(struct list_head *l) {
