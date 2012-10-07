@@ -89,7 +89,6 @@ void init_readyqueue (void) {
 	readyqueue.prev = &readyqueue;
 }
 
-/* No comprova que la llista no es buida perque, al inici es compleix */
 void init_idle (void) {
 	struct list_head *idle_list_pointer = list_first(&freequeue);
 	list_del(idle_list_pointer);
