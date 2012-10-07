@@ -5,6 +5,9 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
+#include <io.h> //TODO include per debugging, borrar
+
+
 
 union task_union task[NR_TASKS]
   __attribute__((__section__(".data.task")));
@@ -97,7 +100,8 @@ void init_idle (void) {
 	idle_task->PID = 0;
 	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[1022] = 0;
-	idle_union_stack->task.dir_pages_baseAddr->kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
+	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
+	printint(idle_task->dir_pages_baseAddr->bits.pbase_addr); // TODO debugging
 }
 
 void init_task1(void) {
@@ -108,6 +112,8 @@ void init_task1(void) {
 	task1_task_struct->PID = 1;
 	set_user_pages(task1_task_struct);
 	set_cr3(task1_task_struct->dir_pages_baseAddr);
+
+	printint(task1_task_struct->dir_pages_baseAddr->bits.pbase_addr); // TODO debugging
 }
 
 
@@ -117,13 +123,13 @@ void init_sched() {
 
 
 void task_switch(union task_union *new) {
-	// Falta revisar si esta bé, i comprovar el funcionament
+	// TODO Falta revisar si esta bé, i comprovar el funcionament
 	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?
 	set_cr3(new->task.dir_pages_baseAddr);
 	struct task_struct * current_task_struct = current();
-	unsigned long *kernel_ebp = &current_task_struct->dir_pages_baseAddr->kernel_ebp;
-	unsigned long new_kernel_esp = new->task.dir_pages_baseAddr->kernel_esp;
-	unsigned long *new_kernel_ebp = &new->task.dir_pages_baseAddr->kernel_ebp;
+	unsigned long *kernel_ebp = &current_task_struct->kernel_ebp;
+	unsigned long new_kernel_esp = new->task.kernel_esp;
+	unsigned long *new_kernel_ebp = &new->task.kernel_ebp;
 
   __asm__ __volatile__(
   		"mov %%ebp,(%0);"

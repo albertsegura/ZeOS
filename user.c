@@ -39,6 +39,7 @@ main(void) {
 
 	int time = 0;
 	char timec[11];
+	char pidc[11];
 	
 	int ret = write(1,"Hola mon!",9);
 	if (ret == -1) perror("Error d'escriptura");
@@ -56,6 +57,12 @@ main(void) {
 	acum = outer(count);
 	int resul = add(4,2);*/
 	
+	write(1," PID: ",6);
+	ret = getpid();
+	itoa(ret,pidc);
+	write(1,pidc,strlen(pidc));
+
+
 	while (1);
 	return 0;
 }

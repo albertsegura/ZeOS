@@ -14,6 +14,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <system.h>
+#include <io.h> // TODO DEBUG
 
 #define LECTURA 0
 #define ESCRIPTURA 1
@@ -32,6 +33,7 @@ int sys_ni_syscall()
 
 int sys_getpid()
 {
+	printint(current()->dir_pages_baseAddr->bits.pbase_addr);
 	return current()->PID;
 }
 

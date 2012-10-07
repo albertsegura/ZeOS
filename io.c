@@ -63,3 +63,26 @@ void printk(char *string)
   for (i = 0; string[i]; i++)
     printc(string[i]);
 }
+
+// Per debugging més agradable, print de unsigned ints
+void printint(unsigned int num)
+{
+	char xifres = 0;
+	unsigned int reversed = 0;
+	if (num == 0) {
+		printc('0');
+		return;
+	}
+	for(;num != 0;num/=10) {
+		reversed *= 10;
+		reversed += num%10;
+		++xifres;
+	}
+	while (xifres != 0) {
+		printc(reversed%10+'0');
+		reversed /= 10;
+		--xifres;
+	}
+
+}
+

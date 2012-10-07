@@ -72,4 +72,14 @@ int gettime() {
 	return ret;
 }
 
+/* Wrapper de la Syscall GetPid */
+int getpid(void) {
+		int ret;
+	__asm__ volatile(
+					"int $0x80"
+				:"=a" (ret) 		// resultat de %eax a ret
+				:"a"  (20)
+				);
+	return ret;
+}
 

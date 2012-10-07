@@ -18,11 +18,13 @@ struct task_struct {
   int PID;			/* Process ID */
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
+  unsigned long kernel_esp;
+  unsigned long kernel_ebp;
 };
 
 union task_union {
   struct task_struct task;
-  unsigned long stack[KERNEL_STACK_SIZE];    /* pila de sistema, per procés */
+  unsigned long stack[KERNEL_STACK_SIZE];    /* pila de sistema, per proces */
 };
 
 extern union task_union task[NR_TASKS]; /* Vector de tasques */
