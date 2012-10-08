@@ -83,3 +83,15 @@ int getpid(void) {
 	return ret;
 }
 
+int fork() {
+		int ret;
+	__asm__ volatile(
+					"int $0x80"
+				:"=a" (ret) 		// resultat de %eax a ret
+				:"a"  (2)
+				);
+	return ret;
+}
+
+
+}
