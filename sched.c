@@ -4,8 +4,7 @@
 
 #include <sched.h>
 #include <mm.h>
-#include <io.h>
-#include <io.h> //TODO include per debugging, borrar
+
 
 
 
@@ -51,42 +50,16 @@ void cpu_idle(void)
 }
 
 void init_freequeue (void) {
-	// Versió funció
-	//INIT_LIST_HEAD(&freequeue);
-	freequeue.next = &freequeue;
-	freequeue.prev = &freequeue;
+	INIT_LIST_HEAD(&freequeue);
+
 	int i;
-	for(i=NR_TASKS-1;i!=0;--i) {
+	for(i=NR_TASKS-1; i!=-1 ;--i) {
 		list_add(&task[i].task.list, &freequeue);
 	}
-
-	// Versió treballada
-	/*
-	int i;
-	for(i=0;i<NR_TASKS;++i) {
-		if  (i == 0) {
-			freequeue.next = &task[i].task.list;
-			task[i].task.list.prev = &freequeue;
-		}
-		if (i != NR_TASKS-1) {
-			task[i].task.list.next = &task[i+1].task.list;
-			task[i+1].task.list.prev = &task[i].task.list;
-		}
-		else {
-			task[i].task.list.next = &freequeue;
-			freequeue.prev = &task[i].task.list;
-		}
-	}
-	*/
 }
 
 void init_readyqueue (void) {
-	// Versió funció
-	//INIT_LIST_HEAD(&readyqueue);
-
-	// Versió treballada
-	readyqueue.next = &readyqueue;
-	readyqueue.prev = &readyqueue;
+	INIT_LIST_HEAD(&readyqueue);
 }
 
 void init_idle (void) {
@@ -100,7 +73,6 @@ void init_idle (void) {
 	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[1022] = 0;
 	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
-	printint(idle_task->dir_pages_baseAddr->bits.pbase_addr); // TODO debugging
 }
 
 void init_task1(void) {
@@ -112,7 +84,6 @@ void init_task1(void) {
 	set_user_pages(task1_task_struct);
 	set_cr3(task1_task_struct->dir_pages_baseAddr);
 
-	printint(task1_task_struct->dir_pages_baseAddr->bits.pbase_addr); // TODO debugging
 }
 
 

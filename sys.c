@@ -14,26 +14,24 @@
 #include <sched.h>
 #include <errno.h>
 #include <system.h>
-#include <io.h> // TODO DEBUG
 
 #define LECTURA 0
 #define ESCRIPTURA 1
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -1; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -2; /*EACCES*/
+  if (fd!=1) return -EBADF; /*EBADF*/
+  if (permissions!=ESCRIPTURA) return -EACCES; /*EACCES*/
   return 0;
 }
 
 int sys_ni_syscall()
 {
-	return -3; /*ENOSYS*/
+	return -ENOSYS; /*ENOSYS*/
 }
 
 int sys_getpid()
 {
-	printint(current()->dir_pages_baseAddr->bits.pbase_addr);
 	return current()->PID;
 }
 
@@ -56,9 +54,9 @@ int sys_write(int fd, char * buffer, int size) {
 	
 	ret = check_fd(fd,ESCRIPTURA);
 	if (ret != 0) return ret;
-  	if (buffer == NULL) return -4;
-	if (size <= 0) return -5;
-	if (access_ok(VERIFY_READ, buffer, size) == 0) return -6;
+  	if (buffer == NULL) return -EPNULL;
+	if (size <= 0) return -ESIZEB;
+	if (access_ok(VERIFY_READ, buffer, size) == 0) return -ENACCB;
 
 	while (size > 4) {
 		copy_from_user(buffer, buff, 4);

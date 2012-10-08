@@ -57,9 +57,10 @@ main(void) {
 	acum = outer(count);
 	int resul = add(4,2);*/
 	
-	write(1," PID: ",6);
+	write(1," NUM: ",6);
 	ret = getpid();
 	itoa(ret,pidc);
+	write(1," PID: ",6);
 	write(1,pidc,strlen(pidc));
 
 
