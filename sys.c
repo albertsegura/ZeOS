@@ -39,13 +39,28 @@ int sys_fork()
 {
   int PID=-1;
 
-  // creates the child process
+  if (list_empty(&freequeue)) return -1; // TODO Crear errno
+  struct list_head *new_list_pointer = list_first(&freequeue);
+	list_del(new_list_pointer);
+	struct task_struct * new_pcb = list_head_to_task_struct(new_list_pointer);
+	struct task_struct * current_pcb = current();
+
+	union task_union *new_union_stack = (union task_union*)new_pcb;
+
+	int frame = alloc_frame();
+	if (frame == -1) return -1; // TODO Crear errno
+	printint(frame); // TODO Debug
+	copy_data(current_pcb, new_pcb,4096); // Es copia tot el stack no només el pcb
+
+
+	// TODO Continua en el punt d)
   
   return PID;
 }
 
 void sys_exit()
-{  
+{
+
 }
 
 int sys_write(int fd, char * buffer, int size) {

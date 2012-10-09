@@ -64,6 +64,9 @@ main(void) {
 	write(1,pidc,strlen(pidc));
 
 
+	write(1,"\n",1);
+	fork();
+
 	while (1);
 	return 0;
 }

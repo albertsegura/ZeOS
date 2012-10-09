@@ -46,13 +46,13 @@ int strlen(char *a)
 int write (int fd, char *buffer, int size) {
 	int ret;
 	__asm__ volatile( 
-					"int $0x80"
+				"int $0x80"
 				:"=a" (ret), 		// resultat de %eax a ret
 				"+b" (fd), 
 				"+c" (buffer),
 				"+d" (size)
 				:"a"  (4)
-				);
+	);
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;
@@ -63,33 +63,37 @@ int write (int fd, char *buffer, int size) {
 
 /* Wrapper de la Syscall Gettime */
 int gettime() {
-		int ret;
+	int ret;
 	__asm__ volatile( 
-					"int $0x80"
+				"int $0x80"
 				:"=a" (ret) 		// resultat de %eax a ret
 				:"a"  (10)
-				);
+	);
 	return ret;
 }
 
 /* Wrapper de la Syscall GetPid */
 int getpid(void) {
-		int ret;
+	int ret;
 	__asm__ volatile(
-					"int $0x80"
+				"int $0x80"
 				:"=a" (ret) 		// resultat de %eax a ret
 				:"a"  (20)
-				);
+	);
 	return ret;
 }
 
 int fork() {
-		int ret;
+	int ret;
 	__asm__ volatile(
-					"int $0x80"
+				"int $0x80"
 				:"=a" (ret) 		// resultat de %eax a ret
 				:"a"  (2)
-				);
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
 	return ret;
 }
 
