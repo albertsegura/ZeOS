@@ -52,8 +52,11 @@ int sys_fork()
 	printint(frame); // TODO Debug
 	copy_data(current_pcb, new_pcb,4096); // Es copia tot el stack no només el pcb
 
+	// TODO Punt d) Important repassar a fons el tema que parla de memoria.
 
-	// TODO Continua en el punt d)
+	//page_table_entry * pt_new = get_PT(new_pcb);
+
+
   
   return PID;
 }
