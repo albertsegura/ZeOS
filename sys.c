@@ -49,13 +49,44 @@ int sys_fork()
 
 	int frame = alloc_frame();
 	if (frame == -1) return -1; // TODO Crear errno
-	printint(frame); // TODO Debug
-	copy_data(current_pcb, new_pcb,4096); // Es copia tot el stack no només el pcb
+	/* Copia del Stack */
+	copy_data(current_pcb, new_pcb,4096);
 
-	// TODO Punt d) Important repassar a fons el tema que parla de memoria.
+	/* punt d.i: copia de les page tables corresponents*/
+	page_table_entry * pt_new = get_PT(new_pcb);
+	page_table_entry * pt_current = get_PT(current_pcb);
 
-	//page_table_entry * pt_new = get_PT(new_pcb);
+	int pag;
+	int new_ph_pag;
+	 /* CODE */
+	for (pag=0;pag<NUM_PAG_CODE;pag++){ /*Inecessari, la copia ja es igual*/
+		pt_new[PAG_LOG_INIT_CODE_P0+pag].entry =
+				pt_current[PAG_LOG_INIT_CODE_P0+pag].entry;
+	}
 
+	/* DATA */
+	for (pag=0;pag<NUM_PAG_DATA;pag++){
+		new_ph_pag=alloc_frame();
+		pt_new[PAG_LOG_INIT_DATA_P0+pag].entry = 0;
+		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr = new_ph_pag;
+		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.user = 1;
+		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.rw = 1;
+		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.present = 1;
+	}
+
+
+	/* punt d.ii */
+	int first_free_pag; // TODO Determinar
+	for (pag=0;pag<NUM_PAG_DATA;pag++){
+		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag]);
+	}
+	copy_data(pt_current[PAG_LOG_INIT_DATA_P0], pt_current[first_free_pag], 1024*NUM_PAG_DATA);
+	for (pag=0;pag<NUM_PAG_DATA;pag++){
+		del_ss_pag(pt_current, first_free_pag+pag);
+	}
+	set_cr3(pt_current);
+
+	/* punt e */
 
   
   return PID;
