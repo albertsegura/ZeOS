@@ -103,6 +103,7 @@ int __attribute__((__section__(".text.main")))
   printk("Entering user mode..."); 
   
   zeos_ticks = 0;
+  lastPID = 1;
   
   enable_int();
   /*

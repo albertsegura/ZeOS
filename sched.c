@@ -1,5 +1,5 @@
 /*
- * sched.c - initializes struct for task 0 anda task 1
+ * sched.c - initializes struct for task 0 and task 1
  */
 
 #include <sched.h>
@@ -18,6 +18,8 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
   return list_entry( l, struct task_struct, list);
 }
 #endif 
+
+int lastPID;
 
 extern struct list_head blocked;
 
@@ -109,6 +111,12 @@ void task_switch(union task_union *new) {
   		: /* no output */
   		: "r" (kernel_ebp), "r" (new_kernel_esp), "r" (new_kernel_ebp)
   );
+}
+
+/* Retorna el lastPID assignat +1.
+ * Si s'arriba al overflow es pot controlar i mirar quin esta lliure*/
+int getNewPID() {
+	return ++lastPID;
 }
 
 struct task_struct *list_head_to_task_struct(struct list_head *l) {

@@ -77,16 +77,20 @@ int sys_fork()
 
 	/* punt d.ii */
 	int first_free_pag; // TODO Determinar
+	// TODO WARRNING pbase_addr es el numero no la @, ARREGLAR
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag]);
+		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
-	copy_data(pt_current[PAG_LOG_INIT_DATA_P0], pt_current[first_free_pag], 1024*NUM_PAG_DATA);
+	copy_data(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr,
+			pt_current[first_free_pag].bits.pbase_addr, 1024*NUM_PAG_DATA);
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		del_ss_pag(pt_current, first_free_pag+pag);
 	}
 	set_cr3(pt_current);
 
 	/* punt e */
+	PID = getNewPID();
+	new_pcb->PID = PID;
 
   
   return PID;

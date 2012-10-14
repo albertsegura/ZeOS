@@ -32,6 +32,7 @@ extern struct task_struct *idle_task;
 extern struct list_head freequeue;
 extern struct list_head readyqueue;
 extern struct task_struct * idle_task;
+extern int lastPID;
 
 #define KERNEL_ESP       (DWord) &task[1].stack[KERNEL_STACK_SIZE]
 
@@ -49,6 +50,8 @@ void init_sched(void);
 struct task_struct * current();
 
 void task_switch(union task_union *new);
+
+int getNewPID();
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
