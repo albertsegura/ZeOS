@@ -7,5 +7,6 @@
 
 void clock_handler();
 void keyboard_handler();
+void ret_from_fork();
 
 #endif  /* __ENTRY_H__ */

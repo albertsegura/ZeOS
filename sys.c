@@ -50,7 +50,7 @@ int sys_fork()
 	int frame = alloc_frame();
 	if (frame == -1) return -1; // TODO Crear errno
 	/* Copia del Stack */
-	copy_data(current_pcb, new_pcb,4096);
+	copy_data(current_pcb, new_pcb, 4096);
 
 	/* punt d.i: copia de les page tables corresponents*/
 	page_table_entry * pt_new = get_PT(new_pcb);
@@ -82,7 +82,7 @@ int sys_fork()
 		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
 	copy_data(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr,
-			pt_current[first_free_pag].bits.pbase_addr, 1024*NUM_PAG_DATA);
+			pt_current[first_free_pag].bits.pbase_addr, 4*1024*NUM_PAG_DATA);
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		del_ss_pag(pt_current, first_free_pag+pag);
 	}

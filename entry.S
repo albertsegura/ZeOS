@@ -84,3 +84,7 @@ ENTRY(keyboard_handler)
 	RESTORE_ALL
 	iret
 
+ENTRY(ret_from_fork)
+	RESTORE_ALL
+	iret
+
