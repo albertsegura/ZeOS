@@ -52,7 +52,7 @@ int sys_fork()
 	/* Copia del Stack */
 	copy_data(current_pcb, new_pcb, 4096);
 
-	/* punt d.i: copia de les page tables corresponents*/
+	/* Pag 36 Punt d.i: copia de les page tables corresponents*/
 	page_table_entry * pt_new = get_PT(new_pcb);
 	page_table_entry * pt_current = get_PT(current_pcb);
 
@@ -75,14 +75,13 @@ int sys_fork()
 	}
 
 
-	/* punt d.ii */
-	int first_free_pag; // TODO Determinar
-	// TODO WARRNING pbase_addr es el numero no la @, ARREGLAR
+	/* Pag 36 Punt d.ii */
+	int first_free_pag = NUM_PAG_CODE + NUM_PAG_DATA + 1;
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr<<12);
 	}
-	copy_data(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr,
-			pt_current[first_free_pag].bits.pbase_addr, 4*1024*NUM_PAG_DATA);
+	copy_data(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12,
+			pt_current[first_free_pag].bits.pbase_addr<<12, 4*1024*NUM_PAG_DATA);
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		del_ss_pag(pt_current, first_free_pag+pag);
 	}

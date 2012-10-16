@@ -99,6 +99,7 @@ void task_switch(union task_union *new) {
 	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?
 	set_cr3(new->task.dir_pages_baseAddr);
 	struct task_struct * current_task_struct = current();
+	// TODO Camp kernel_ebp s'ha de fusionar en el kernel_esp, fan el mateix proposit.
 	unsigned long *kernel_ebp = &current_task_struct->kernel_ebp;
 	unsigned long new_kernel_esp = new->task.kernel_esp;
 	unsigned long *new_kernel_ebp = &new->task.kernel_ebp;
