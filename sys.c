@@ -89,8 +89,8 @@ int sys_fork()
 		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr<<12);
 	}
 		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
-	copy_data(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12,
-			pt_current[first_free_pag].bits.pbase_addr<<12, 4*1024*NUM_PAG_DATA);
+	copy_data((void *)(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12),
+			(void *)(pt_current[first_free_pag].bits.pbase_addr<<12), 4*1024*NUM_PAG_DATA);
 		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		del_ss_pag(pt_current, first_free_pag+pag);
@@ -102,7 +102,7 @@ int sys_fork()
 	new_pcb->PID = PID;
 
 	/* Pag 36 Punt f */
-
+	// TODO eax pid, @ret ebp
 
 	/* Pag 36 Punt g */
   
