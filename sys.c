@@ -89,6 +89,11 @@ int sys_fork()
 		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr<<12);
 	}
 		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
+	/*printc('\n');
+	printint(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12);
+	printc('\n');
+	printint(pt_current[first_free_pag].bits.pbase_addr<<12);*/
+
 	copy_data((void *)(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12),
 			(void *)(pt_current[first_free_pag].bits.pbase_addr<<12), 4*1024*NUM_PAG_DATA);
 		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush */
