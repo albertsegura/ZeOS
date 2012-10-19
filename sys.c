@@ -14,6 +14,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <system.h>
+#include <entry.h>
 
 #define LECTURA 0
 #define ESCRIPTURA 1
@@ -35,12 +36,15 @@ int sys_getpid()
 	return current()->PID;
 }
 
+
+
 int sys_fork()
 {
   int PID=-1;
+
   int current_ebp = 0;
   int new_ebp = 0;
-  int ebp_diff_from_stack = 0; // diferencia entre stack i la posició de ebp en aquesta
+  unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
 
   /* Pag 36 Punt a: Obtenció d'una task_struct nova de la freequeue */
   if (list_empty(&freequeue)) return -1; // TODO Crear errno
@@ -49,19 +53,25 @@ int sys_fork()
 	list_del(new_list_pointer);
 	struct task_struct * new_pcb = list_head_to_task_struct(new_list_pointer);
 	struct task_struct * current_pcb = current();
+	union task_union *new_stack = (union task_union*)new_pcb;
+	union task_union *current_stack = (union task_union*)current_pcb;
 
+	/* Càlcul de pos_ebp */
 	__asm__ __volatile__(
 	  		"mov %%ebp,%0;"
-	  		: /* no output */
-	  		: "r" (current_ebp)
+	  		: "=r" (current_ebp)
+	  		:
 	  );
+	pos_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)/4;
 
-	// TODO debug
-
-	printint(current_pcb);
-	printint(current_ebp);
-	printint(current_ebp-current_pcb);
-	new_ebp = (current_ebp-current_pcb) + new_pcb;
+	/*// Prints per veure les diferencies entre el ebp i la base de la pila en els processos.
+	printint((unsigned int)current_ebp); printc('-'); printint((unsigned int)current_pcb); printc('=');
+	printint((unsigned int)current_ebp-(unsigned int)current_pcb);
+	printc('\n');
+	new_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)+(unsigned int)new_pcb;
+	printint(new_ebp); printc('-');	printint((unsigned int)new_pcb); printc('=');
+		printint((unsigned int)new_ebp-(unsigned int)new_pcb);
+	*/
 
 	/* Pag 36 Punt b: Obtenció de pàgines físiques */
 	int frame = alloc_frame();
@@ -69,7 +79,6 @@ int sys_fork()
 
 	/* Pag 36 Punt c: Copia del Stack */
 	copy_data(current_pcb, new_pcb, 4096);
-
 
 	/* Pag 36 Punt d.i: Copia de les page tables corresponents*/
 	page_table_entry * pt_new = get_PT(new_pcb);
@@ -91,11 +100,6 @@ int sys_fork()
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		new_ph_pag=alloc_frame();
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,new_ph_pag);
-		/*pt_new[PAG_LOG_INIT_DATA_P0+pag].entry = 0;
-		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr = new_ph_pag;
-		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.user = 1;
-		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.rw = 1;
-		pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.present = 1;*/
 	}
 
 
@@ -108,7 +112,7 @@ int sys_fork()
 	}
 
 		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
-	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),	(void *)(first_free_pag<<12), 4*1024*NUM_PAG_DATA);
+	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),	(void *)(first_free_pag<<12), 4096*NUM_PAG_DATA);
 
 		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
@@ -121,13 +125,16 @@ int sys_fork()
 	new_pcb->PID = PID;
 
 	/* Pag 36 Punt f */
-  __asm__ __volatile__(
+	new_stack->stack[pos_ebp+7] = 0; //eax del Save_all
+	new_stack->task.kernel_esp = &new_stack->stack[pos_ebp+2]; // Apunta al ultim element guardat pel save_all
+	new_stack->stack[pos_ebp+1] = &ret_from_fork;
+ /* __asm__ __volatile__(
   		"mov %%ebp,(%0);"
   		"mov %1,%%esp;"
   		"pop %%ebp;"
   		"ret;"
   		: /* no output */
-  		: "r" (kernel_esp), "r" (new_kernel_esp)
+  	/*	: "r" (kernel_esp), "r" (new_kernel_esp)
   );
 	// TODO eax pid, @ret ebp
 

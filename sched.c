@@ -97,6 +97,7 @@ void init_sched() {
 
 void task_switch(union task_union *new) {
 	// TODO Falta revisar si esta bé, i comprovar el funcionament
+	// TODO REVISAR el ASSEMBLER PERQUE HAN D'ANAR A OUTPUT (POTSER)
 	struct task_struct * current_task_struct = current();
 	page_table_entry * dir_new = get_DIR(new);
 	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?

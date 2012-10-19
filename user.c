@@ -38,6 +38,7 @@ main(void) {
     /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	int time = 0;
+	int pid;
 	char timec[11];
 	char pidc[11];
 	
@@ -65,7 +66,14 @@ main(void) {
 
 
 	write(1,"\n",1);
-	fork();
+	pid = fork();
+	if (pid != 0) { // Pare
+		write(1,"Soc el pare",11);
+	}
+	else {
+		write(1,"Soc el fill",11);
+	}
+
 
 	while (1);
 	return 0;
