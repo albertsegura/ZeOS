@@ -81,10 +81,11 @@ void init_task1(void) {
 	struct list_head *task1_list_pointer = list_first(&freequeue);
 	list_del(task1_list_pointer);
 	struct task_struct * task1_task_struct = list_head_to_task_struct(task1_list_pointer);
+	page_table_entry * dir_task1 = get_DIR(task1_task_struct);
 
 	task1_task_struct->PID = 1;
 	set_user_pages(task1_task_struct);
-	set_cr3(task1_task_struct->dir_pages_baseAddr);
+	set_cr3(dir_task1);
 
 }
 
@@ -97,8 +98,9 @@ void init_sched() {
 void task_switch(union task_union *new) {
 	// TODO Falta revisar si esta bé, i comprovar el funcionament
 	struct task_struct * current_task_struct = current();
+	page_table_entry * dir_new = get_DIR(new);
 	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?
-	set_cr3(new->task.dir_pages_baseAddr);
+	set_cr3(dir_new);
 	// TODO Camp kernel_ebp s'ha de fusionar en el kernel_esp, fan el mateix proposit.
 
 	unsigned long *kernel_esp = &current_task_struct->kernel_esp;
