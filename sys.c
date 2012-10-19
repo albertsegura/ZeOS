@@ -46,7 +46,7 @@ int sys_fork()
 	struct task_struct * new_pcb = list_head_to_task_struct(new_list_pointer);
 	struct task_struct * current_pcb = current();
 
-	union task_union *new_union_stack = (union task_union*)new_pcb;
+
 
 	/* Pag 36 Punt b: Obtenció de pàgines físiques */
 	int frame = alloc_frame();
@@ -58,6 +58,7 @@ int sys_fork()
 	/* Pag 36 Punt d.i: Copia de les page tables corresponents*/
 	page_table_entry * pt_new = get_PT(new_pcb);
 	page_table_entry * pt_current = get_PT(current_pcb);
+	page_table_entry * dir_current = get_DIR(current_pcb);
 
 	int pag;
 	int new_ph_pag;
@@ -84,9 +85,10 @@ int sys_fork()
 	/* Pag 36 Punt d.ii */
 		/* d.ii.A: Assignació de noves pàgines logiques al procés actual,
 		 * 					de les pàgines físiques obtingudes per al procés nou	*/
-	int first_free_pag = NUM_PAG_CODE + NUM_PAG_DATA + 1;
+	int first_free_pag = NUM_PAG_KERNEL + NUM_PAG_CODE + NUM_PAG_DATA;
+
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr<<12);
+		set_ss_pag(pt_current, first_free_pag+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
 		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
 	/*printc('\n');
@@ -94,19 +96,29 @@ int sys_fork()
 	printc('\n');
 	printint(pt_current[first_free_pag].bits.pbase_addr<<12);*/
 
-	copy_data((void *)(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12),
-			(void *)(pt_current[first_free_pag].bits.pbase_addr<<12), 4*1024*NUM_PAG_DATA);
+	/*copy_data((void *)(pt_current[PAG_LOG_INIT_DATA_P0].bits.pbase_addr<<12),
+			(void *)(pt_current[first_free_pag].bits.pbase_addr<<12), 4*1024*NUM_PAG_DATA);*/
+	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),
+				(void *)(first_free_pag<<12), 4*1024*NUM_PAG_DATA);
 		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		del_ss_pag(pt_current, first_free_pag+pag);
 	}
-	set_cr3(pt_current);
+	set_cr3(dir_current);
 
 	/* Pag 36 Punt e */
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
 	/* Pag 36 Punt f */
+  __asm__ __volatile__(
+  		"mov %%ebp,(%0);" 	/*	Punt 3	*/
+  		"mov %1,%%esp;" 		/*	Punt 4	*/
+  		"pop %%ebp;"				/*	Punt 5	*/
+  		"ret;"
+  		: /* no output */
+  		: "r" (kernel_esp), "r" (new_kernel_esp)
+  );
 	// TODO eax pid, @ret ebp
 
 	/* Pag 36 Punt g */
