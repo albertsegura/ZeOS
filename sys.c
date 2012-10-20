@@ -40,8 +40,9 @@ int sys_DEBUG_tswitch() { // TODO REMOVE DEBUG
 	struct list_head *new_list_task = list_first(&readyqueue);
 	list_del(new_list_task);
 	struct task_struct * new_task = list_head_to_task_struct(new_list_task);
+	struct task_struct * current_task = current();
 	union task_union *new_stack = (union task_union*)new_task;
-
+	list_add_tail(&current_task->list,&readyqueue);
 	task_switch(new_stack);
 	return 0;
 }
@@ -119,18 +120,18 @@ int sys_fork()
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
-	/* Pag 36 Punt f */
+	/* Pag 36 Punt f i g */
 
-
-	new_stack->stack[pos_ebp+8] = 0; //eax del Save_all
-	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp]; // Apunta al ultim element guardat pel save_all
+	// eax del Save_all (Serà el pid de retorn del fill)
+	new_stack->stack[pos_ebp+8] = 0;
+	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
+	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
+	// Modificant la funció a on retornarà
 	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
-	//new_stack->stack[pos_ebp] = &ret_from_fork; // el ebp del nou proces hauria de ser diferent...
-	// TODO Pregutnar si es necessari modificar-lo, doncs en principi, en mode sistema no ens afecta:
-	// despres del ret_from_fork fem un iret (per tant no ens importa el ebp, aquest)
 
-	/* Pag 36 Punt g */
-  
+	// TODO Preguntar si es necessari modificar-lo, doncs en principi, en mode sistema no ens afecta:
+	// despres del ret_from_fork fem un iret (per tant no ens importa el ebp, aquest)
+	//new_stack->stack[pos_ebp] = &ret_from_fork; // el ebp del nou proces hauria de ser diferent...
 
 	/* Pag 36 Punt h */
 	list_add_tail(&new_pcb->list,&readyqueue);

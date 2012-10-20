@@ -55,8 +55,8 @@ void init_freequeue (void) {
 	INIT_LIST_HEAD(&freequeue);
 
 	int i;
-	for(i=NR_TASKS-1; i!=-1 ;--i) {
-		list_add(&task[i].task.list, &freequeue);
+	for (i = 0; i < NR_TASKS; ++i) {
+		list_add_tail(&task[i].task.list,&freequeue);
 	}
 }
 
@@ -96,7 +96,6 @@ void init_sched() {
 
 
 void task_switch(union task_union *new) {
-	// TODO Falta revisar si esta bé, i comprovar el funcionament
 	struct task_struct * current_task_struct = current();
 	page_table_entry * dir_new = get_DIR((struct task_struct *) new);
 
