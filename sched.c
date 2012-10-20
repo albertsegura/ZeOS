@@ -97,12 +97,11 @@ void init_sched() {
 
 void task_switch(union task_union *new) {
 	// TODO Falta revisar si esta bé, i comprovar el funcionament
-	// TODO REVISAR el ASSEMBLER PERQUE HAN D'ANAR A OUTPUT (POTSER)
 	struct task_struct * current_task_struct = current();
-	page_table_entry * dir_new = get_DIR(new);
-	tss.esp0 = (unsigned long)&new->stack[1023]; // o 1024?
+	page_table_entry * dir_new = get_DIR((struct task_struct *) new);
+
+	tss.esp0 = (unsigned long)&new->stack[KERNEL_STACK_SIZE]; // o 1023?
 	set_cr3(dir_new);
-	// TODO Camp kernel_ebp s'ha de fusionar en el kernel_esp, fan el mateix proposit.
 
 	unsigned long *kernel_esp = &current_task_struct->kernel_esp;
 	unsigned long new_kernel_esp = new->task.kernel_esp;

@@ -20,6 +20,8 @@ int getpid();
 
 int fork();
 
+int debug_task_switch();
+
 void exit();
 
 #endif  /* __LIBC_H__ */

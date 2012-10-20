@@ -68,12 +68,17 @@ main(void) {
 	write(1,"\n",1);
 	pid = fork();
 	if (pid != 0) { // Pare
-		write(1,"Soc el pare",11);
+		write(1,"Soc el pare\n",12);
+		debug_task_switch();
 	}
 	else {
-		write(1,"Soc el fill",11);
+		write(1,"Soc el fill\n",12);
 	}
 
+	ret = getpid();
+	itoa(ret,pidc);
+	write(1," PID: ",6);
+	write(1,pidc,strlen(pidc));
 
 	while (1);
 	return 0;

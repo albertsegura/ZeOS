@@ -11,7 +11,7 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall
 	.long sys_ni_syscall
 	.long sys_ni_syscall
-	.long sys_ni_syscall
+	.long sys_DEBUG_tswitch // TODO REMOVE DEBUG
 	.long sys_gettime   // 10
 	.long sys_ni_syscall
 	.long sys_ni_syscall

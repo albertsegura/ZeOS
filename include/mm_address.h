@@ -12,6 +12,9 @@
 #define NUM_PAG_DATA 20
 #define PAGE_SIZE 0x1000
 
+// Primera pàgina lliure en un procés acabat de crear
+#define FIRST_FREE_PAG_P (NUM_PAG_KERNEL+NUM_PAG_CODE+NUM_PAG_DATA)
+
 /* Memory distribution */
 /***********************/
 

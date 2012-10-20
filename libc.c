@@ -98,3 +98,14 @@ int fork() {
 }
 
 
+// TODO REMOVE DEBUG
+int debug_task_switch() {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret) 		// resultat de %eax a ret
+				:"a"  (9)
+	);
+	return ret;
+}
+
