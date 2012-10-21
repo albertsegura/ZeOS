@@ -83,11 +83,12 @@ int getpid(void) {
 	return ret;
 }
 
+/* Wrapper de la Syscall Fork */
 int fork() {
 	int ret;
 	__asm__ volatile(
 				"int $0x80"
-				:"=a" (ret) 		// resultat de %eax a ret
+				:"=a" (ret)
 				:"a"  (2)
 	);
 	if (ret < 0) {
@@ -98,14 +99,23 @@ int fork() {
 }
 
 
-// TODO REMOVE DEBUG
+/* Wrapper de la Syscall de Debug sys_DEBUG_tswitch */
 int debug_task_switch() {
 	int ret;
 	__asm__ volatile(
 				"int $0x80"
-				:"=a" (ret) 		// resultat de %eax a ret
+				:"=a" (ret)
 				:"a"  (9)
 	);
 	return ret;
+}
+
+/* Wrapper de la Syscall Exit */
+void exit() {
+	__asm__ volatile(
+				"int $0x80"
+				:
+				:"a"  (1)
+	);
 }
 

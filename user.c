@@ -84,7 +84,7 @@ main(void) {
 		itoa(ret,pidc);
 		write(1,"\nPID: ",6);
 		write(1,pidc,strlen(pidc));
-		debug_task_switch();
+		//debug_task_switch();
 	}
 
 

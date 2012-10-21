@@ -94,6 +94,10 @@ void clock_routine() {
 	
 	zeos_ticks++;
 	zeos_show_clock();
+	sched_update_data();
+	if (schred_change_needed() == 1) {
+		schred_switch_process();
+	}
 	
 }
 

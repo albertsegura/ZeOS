@@ -11,6 +11,9 @@
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
+#define RR_QUANTUM	500
+#define SCHRED_POLICY_RR	1
+#define SCHRED_POLICY SCHRED_POLICY_RR
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED, ST_ZOMBIE };
 
@@ -19,7 +22,7 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
   unsigned long kernel_esp;
-  //unsigned long kernel_ebp;
+  unsigned int quantum;
 };
 
 union task_union {
@@ -58,5 +61,13 @@ struct task_struct *list_head_to_task_struct(struct list_head *l);
 page_table_entry * get_PT (struct task_struct *t) ;
 
 page_table_entry * get_DIR (struct task_struct *t) ;
+
+int sched_update_data();
+
+int schred_change_needed();
+
+int schred_switch_process();
+
+int schred_update_queues_state();
 
 #endif  /* __SCHED_H__ */

@@ -2,7 +2,7 @@
 #include <segment.h>
 
 ENTRY (sys_call_table)
-	.long sys_ni_syscall//0
+	.long sys_exit		 //0
 	.long sys_ni_syscall
 	.long sys_fork
 	.long sys_ni_syscall

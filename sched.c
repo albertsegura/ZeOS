@@ -72,6 +72,7 @@ void init_idle (void) {
 	union task_union *idle_union_stack = (union task_union*)idle_task;
 
 	idle_task->PID = 0;
+	idle_task->quantum = RR_QUANTUM; // TODO Check
 	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[1022] = 0;
 	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
@@ -84,6 +85,7 @@ void init_task1(void) {
 	page_table_entry * dir_task1 = get_DIR(task1_task_struct);
 
 	task1_task_struct->PID = 1;
+	task1_task_struct->quantum = RR_QUANTUM;
 	set_user_pages(task1_task_struct);
 	set_cr3(dir_task1);
 
@@ -135,4 +137,73 @@ struct task_struct* current()
   );
   return (struct task_struct*)(ret_value&0xfffff000);
 }
+
+
+/* Update policy data (update tics in the case of a round robin, update priorities, etc.).
+ * There can be a generic function that calls one or another function based on a global
+ * variable or a constant that selects the policy. */
+int sched_update_data() {
+
+	if (SCHRED_POLICY == SCHRED_POLICY_RR) {
+		struct task_struct * current_task = current();
+		--current_task->quantum;
+	}
+	else {
+		/* Other scheduler policies */
+	}
+
+	return 0;
+}
+
+/* Check the policy to see whether a process switch is required or not. */
+int schred_change_needed() {
+
+	if (SCHRED_POLICY == SCHRED_POLICY_RR) {
+		struct task_struct * current_task = current();
+		if (current_task->quantum == 0) return 1;
+	}
+	else {
+		/* Other scheduler policies */
+	}
+	return 0;
+}
+
+/* Select the next process to run and perform a process switch. */
+int schred_switch_process() {
+
+	if (SCHRED_POLICY == SCHRED_POLICY_RR) {
+		if (!list_empty(&readyqueue)) {
+			struct list_head *new_list_task = list_first(&readyqueue);
+			list_del(new_list_task);
+			struct task_struct * new_task = list_head_to_task_struct(new_list_task);
+			struct task_struct * current_task = current();
+
+			list_add_tail(&current_task->list,&readyqueue);
+			new_task->quantum = RR_QUANTUM;
+			task_switch((union task_union*)new_task);
+		}
+		else {
+			struct task_struct * current_task = current();
+			current_task->quantum = RR_QUANTUM;
+		}
+	}
+	else {
+		/* Other scheduler policies */
+	}
+	return 0;
+}
+
+/* Update queues and state of processes.*/
+int schred_update_queues_state() {
+
+	if (SCHRED_POLICY == SCHRED_POLICY_RR) {
+
+	}
+	else {
+		/* Other scheduler policies */
+	}
+	return 0;
+}
+
+
 

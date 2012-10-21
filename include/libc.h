@@ -1,6 +1,6 @@
 /*
  * libc.h - macros per fer els traps amb diferents arguments
- *          definiciÃ³ de les crides a sistema
+ *          definició de les crides a sistema
  */
  
 #ifndef __LIBC_H__
