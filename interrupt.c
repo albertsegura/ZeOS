@@ -9,6 +9,7 @@
 
 #include <zeos_interrupt.h>
 #include <system.h>
+#include <sched.h>
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
@@ -95,10 +96,9 @@ void clock_routine() {
 	zeos_ticks++;
 	zeos_show_clock();
 	sched_update_data();
-	if (schred_change_needed() == 1) {
-		schred_switch_process();
+	if (sched_change_needed() == 1) {
+		sched_switch_process();
 	}
-	
 }
 
 void keyboard_routine() {

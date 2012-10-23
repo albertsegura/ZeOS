@@ -11,9 +11,7 @@
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
-#define RR_QUANTUM	500
-#define SCHRED_POLICY_RR	1
-#define SCHRED_POLICY SCHRED_POLICY_RR
+#define DEFAULT_RR_QUANTUM	500
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED, ST_ZOMBIE };
 
@@ -22,7 +20,6 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
   unsigned long kernel_esp;
-  unsigned int quantum;
 };
 
 union task_union {
@@ -35,6 +32,7 @@ extern struct task_struct *idle_task;
 extern struct list_head freequeue;
 extern struct list_head readyqueue;
 extern struct task_struct * idle_task;
+extern unsigned int rr_quantum;
 extern int lastPID;
 
 #define KERNEL_ESP       (DWord) &task[1].stack[KERNEL_STACK_SIZE]
@@ -62,12 +60,32 @@ page_table_entry * get_PT (struct task_struct *t) ;
 
 page_table_entry * get_DIR (struct task_struct *t) ;
 
-int sched_update_data();
 
-int schred_change_needed();
+/* SCHEDULER */
 
-int schred_switch_process();
+/* Update policy data (update tics in the case of a round robin, update priorities, etc.).
+ * There can be a generic function that calls one or another function based on a global
+ * variable or a constant that selects the policy. */
+int (* sched_update_data)();
 
-int schred_update_queues_state();
+/* Check the policy to see whether a process switch is required or not. */
+int (* sched_change_needed)();
+
+/* Select the next process to run and perform a process switch. */
+int (* sched_switch_process)();
+
+/* Update queues and state of processes.*/
+int (* sched_update_queues_state)();
+
+/* Inicialització de la politica de scheduler Round Robin */
+void init_Sched_RR();
+
+int sched_update_data_RR();
+
+int sched_change_needed_RR();
+
+int sched_switch_process_RR();
+
+int sched_update_queues_state_RR();
 
 #endif  /* __SCHED_H__ */
