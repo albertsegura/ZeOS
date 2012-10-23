@@ -141,10 +141,10 @@ struct task_struct* current()
 
 /* SCHEDULER */
 void init_Sched_RR() {
-	sched_update_data = &sched_update_data_RR;
-	sched_change_needed = &sched_change_needed_RR;
-	sched_switch_process = &sched_switch_process_RR;
-	sched_update_queues_state = &sched_update_queues_state_RR;
+	sched_update_data = sched_update_data_RR;
+	sched_change_needed = sched_change_needed_RR;
+	sched_switch_process = sched_switch_process_RR;
+	sched_update_queues_state = sched_update_queues_state_RR;
 	rr_quantum = DEFAULT_RR_QUANTUM;
 }
 
