@@ -66,26 +66,26 @@ page_table_entry * get_DIR (struct task_struct *t) ;
 /* Update policy data (update tics in the case of a round robin, update priorities, etc.).
  * There can be a generic function that calls one or another function based on a global
  * variable or a constant that selects the policy. */
-int (* sched_update_data)();
+void (* sched_update_data)();
 
 /* Check the policy to see whether a process switch is required or not. */
 int (* sched_change_needed)();
 
 /* Select the next process to run and perform a process switch. */
-int (* sched_switch_process)();
+void (* sched_switch_process)(struct task_struct * new_task, int exit);
 
 /* Update queues and state of processes.*/
-int (* sched_update_queues_state)();
+struct task_struct * (* sched_update_queues_state)(int exit);
 
 /* Inicialització de la politica de scheduler Round Robin */
 void init_Sched_RR();
 
-int sched_update_data_RR();
+void sched_update_data_RR();
 
 int sched_change_needed_RR();
 
-int sched_switch_process_RR();
+void sched_switch_process_RR(struct task_struct * new_task, int exit);
 
-int sched_update_queues_state_RR();
+struct task_struct * sched_update_queues_state_RR(int exit);
 
 #endif  /* __SCHED_H__ */

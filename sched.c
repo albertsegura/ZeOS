@@ -148,29 +148,32 @@ void init_Sched_RR() {
 	rr_quantum = DEFAULT_RR_QUANTUM;
 }
 
-int sched_update_data_RR() {
+void sched_update_data_RR() {
 	--rr_quantum;
-	return 0;
 }
 
 int sched_change_needed_RR() {
 	return rr_quantum == 0;
 }
 
-int sched_switch_process_RR() {
+void sched_switch_process_RR(struct task_struct * new_task, int exit) {
 	struct task_struct * current_task = current();
-	list_add_tail(&current_task->list,&readyqueue);
-
-	struct list_head *new_list_task = list_first(&readyqueue);
-	list_del(new_list_task);
-	struct task_struct * new_task = list_head_to_task_struct(new_list_task);
-
 	rr_quantum = DEFAULT_RR_QUANTUM;
-	task_switch((union task_union*)new_task);
 
-	return 0;
+	if (new_task != current_task) {
+		if (exit) list_add_tail(&current_task->list,&freequeue);
+		else list_add_tail(&current_task->list,&readyqueue);
+
+
+		task_switch((union task_union*)new_task);
+	}
 }
 
-int sched_update_queues_state_RR() {
-	return 0;
+struct task_struct * sched_update_queues_state_RR(int exit) {
+		if (list_empty(&readyqueue)) return current();
+		else if (exit) return idle_task;
+
+		struct list_head *new_list_task = list_first(&readyqueue);
+		list_del(new_list_task);
+		return list_head_to_task_struct(new_list_task);
 }
