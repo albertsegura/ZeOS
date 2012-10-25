@@ -10,7 +10,7 @@
 #include <mm.h>
 
 #include <mm_address.h>
-
+#include <stats.h>
 #include <sched.h>
 #include <errno.h>
 #include <system.h>
@@ -180,6 +180,16 @@ int sys_gettime() {
 	return zeos_ticks;
 }
 
+int sys_get_stats(int pid, struct stats *st) {
+	// TODO estructura correcta?
+	union task_union * desired;
+	int found = getStructPID(pid, desired);
+	if (found == 0) return -1;
+	st->tics = desired->task->statistics->tics;
+	st->remaining_quantum = desired->task->statistics->remaining_quantum;
+	st->cs = desired->task->statistics->cs;
+	return 0;
+}
 
 
 
