@@ -55,6 +55,8 @@ void task_switch(union task_union *new);
 
 int getNewPID();
 
+int getStructPID(int PID, union task_union * desired);
+
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
 page_table_entry * get_PT (struct task_struct *t) ;
