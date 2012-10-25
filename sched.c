@@ -53,6 +53,27 @@ void cpu_idle(void)
 	}
 }
 
+int getStructPID(int PID, union task_union * desired) {
+	int found = 0;
+	int i;
+	struct task_struct * current_task = current();
+	if (current_task->PID == PID) {
+		desired = current;
+		found = 1;
+	}
+	// TODO recorrer cua correctament
+	while () {
+		if (->PID == PID) {
+			desired = current;
+			found = 1;
+		}
+		next elem;
+	}
+	if (found == 0) return -1;
+	return 0;
+}
+
+
 void init_freequeue (void) {
 	INIT_LIST_HEAD(&freequeue);
 
