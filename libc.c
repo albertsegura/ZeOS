@@ -119,3 +119,15 @@ void exit() {
 	);
 }
 
+/* Wrapper de la Syscall get_stats */
+int get_stats(int pid, struct stat *st) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret),
+				"+b" (pid),
+				"+c" (st),
+				:"a" (35)
+	);
+	return ret;
+}
