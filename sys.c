@@ -82,6 +82,10 @@ int sys_fork()
 	page_table_entry * pt_current = get_PT(current_pcb);
 	page_table_entry * dir_current = get_DIR(current_pcb);
 
+	// Inicialitzacio estadistica
+	new_pcb->statistics->tics = 0;
+	new_pcb->statistics->cs = 0;
+
 	int pag;
 	int new_ph_pag;
 
