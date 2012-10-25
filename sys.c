@@ -143,7 +143,6 @@ void sys_exit() {
 	page_table_entry * pt_current = get_PT(current_pcb);
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
-		del_ss_pag(pt_current, FIRST_FREE_PAG_P+pag);
 	}
 	/* Pag 38 Punt b */
 	struct task_struct * next_task = sched_update_queues_state(1);
