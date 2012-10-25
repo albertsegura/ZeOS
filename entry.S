@@ -68,8 +68,6 @@
 	movb $0x20, %al; \
 	outb %al, $0x20;
 
-
-
 ENTRY(clock_handler)
 	SAVE_ALL
 	EOI
@@ -87,4 +85,3 @@ ENTRY(keyboard_handler)
 ENTRY(ret_from_fork)
 	RESTORE_ALL
 	iret
-
