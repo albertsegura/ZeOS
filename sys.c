@@ -143,7 +143,8 @@ void sys_exit() {
 	/* Pag 38 Punt a */
 
 	/* Pag 38 Punt b */
-
+	struct task_struct * next_task = sched_update_queues_state(1);
+	sched_switch_process(next_task,1);
 }
 
 int sys_write(int fd, char * buffer, int size) {
