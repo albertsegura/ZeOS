@@ -77,6 +77,10 @@ void init_idle (void) {
 	idle_union_stack->stack[1023] = (unsigned long)&cpu_idle;
 	idle_union_stack->stack[1022] = 0;
 	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
+
+	// Inicialitzacio estadistica
+	idle_task->statistics->cs = 0;
+	idle_task->statistics->tics = 0;
 }
 
 void init_task1(void) {
@@ -90,6 +94,9 @@ void init_task1(void) {
 	set_user_pages(task1_task_struct);
 	set_cr3(dir_task1);
 
+	// Inicialitzacio estadistica
+	task1_task_struct->statistics->cs = 0;
+	task1_task_struct->statistics->tics = 0;
 }
 
 
@@ -146,10 +153,19 @@ void init_Sched_RR() {
 	sched_switch_process = sched_switch_process_RR;
 	sched_update_queues_state = sched_update_queues_state_RR;
 	rr_quantum = DEFAULT_RR_QUANTUM;
+
+	//Inicialitzacio estadistica
+	struct task_struct * current_task = current();
+	current_task->statistics->remaining_quantum = DEFAULT_RR_QUANTUM;
 }
 
 void sched_update_data_RR() {
 	--rr_quantum;
+
+	// Actualitzacio estadistica
+	struct task_struct * current_task = current();
+	--current_task->statistics->remaining_quantum;
+	++current_task->statistics->tics;
 }
 
 int sched_change_needed_RR() {
@@ -164,6 +180,9 @@ void sched_switch_process_RR(struct task_struct * new_task, int exit) {
 		if (exit) list_add_tail(&current_task->list,&freequeue);
 		else list_add_tail(&current_task->list,&readyqueue);
 
+		// Actualitzacio estadistica
+		++current_task->statistics->cs;
+		current_task->statistics->remaining_quantum = DEFAULT_RR_QUANTUM;
 
 		task_switch((union task_union*)new_task);
 	}
