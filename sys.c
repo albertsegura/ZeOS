@@ -71,10 +71,6 @@ int sys_fork()
 	  );
 	pos_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)/4;
 
-	/* Punt b: Obtenció de pàgines físiques */
-	int frame = alloc_frame();
-	if (frame == -1) return -1; // TODO Crear errno
-
 	/* Punt c: Copia del Stack, i restauració del directori del fill*/
 	page_table_entry * copy_dir_pages_baseAddr = get_DIR(new_pcb);
 	copy_data(current_pcb, new_pcb, 4096);
@@ -95,9 +91,10 @@ int sys_fork()
 				pt_current[PAG_LOG_INIT_CODE_P0+pag].entry;
 	}
 
-	/* DATA */
+	/* DATA + Punt b: Obtenció de pàgines físiques */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		new_ph_pag=alloc_frame();
+		if (new_ph_pag == -1) return -1; // TODO Crear errno
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,new_ph_pag);
 	}
 
@@ -141,7 +138,13 @@ int sys_fork()
 
 void sys_exit() {
 	/* Pag 38 Punt a */
-
+	int pag;
+	struct task_struct * current_pcb = current();
+	page_table_entry * pt_current = get_PT(current_pcb);
+	for (pag=0;pag<NUM_PAG_DATA;pag++){
+		free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+		del_ss_pag(pt_current, FIRST_FREE_PAG_P+pag);
+	}
 	/* Pag 38 Punt b */
 	struct task_struct * next_task = sched_update_queues_state(1);
 	sched_switch_process(next_task,1);
