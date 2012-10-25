@@ -37,7 +37,7 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall
 	.long sys_ni_syscall
 	.long sys_ni_syscall
-	.long sys_ni_syscall// 35
+	.long sys_get_stats// 35
 	.long sys_ni_syscall	
 	.long sys_ni_syscall
 	.long sys_ni_syscall
