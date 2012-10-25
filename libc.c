@@ -120,7 +120,7 @@ void exit() {
 }
 
 /* Wrapper de la Syscall get_stats */
-int get_stats(int pid, struct stat *st) {
+int get_stats(int pid, struct stats *st) {
 	int ret;
 	__asm__ volatile(
 				"int $0x80"
