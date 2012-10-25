@@ -139,8 +139,10 @@ int sys_fork()
   return PID;
 }
 
-void sys_exit()
-{
+void sys_exit() {
+	/* Pag 38 Punt a */
+
+	/* Pag 38 Punt b */
 
 }
 
