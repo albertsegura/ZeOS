@@ -106,7 +106,7 @@ int sys_fork()
 		set_ss_pag(pt_current, FIRST_FREE_PAG_P+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
 		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
-	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),	(void *)(FIRST_FREE_PAG_P<<12), 4096*NUM_PAG_DATA);
+	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),	(void *)(FIRST_FREE_PAG_P<<12), PAGE_SIZE*NUM_PAG_DATA);
 
 		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush de la TLB */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
@@ -173,19 +173,18 @@ int sys_write(int fd, char * buffer, int size) {
 }
 
 int sys_gettime() {
-	
 	return zeos_ticks;
 }
 
 int sys_get_stats(int pid, struct stats *st) {
 	struct task_struct * desired;
+	int found = getStructPID(pid, &desired);
 
-
-	int found = getStructPID(pid, desired);
-	if (found == -1) return -ENSPID;
-
-	if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
-	copy_to_user(&desired->statistics,st,12);
+	if (found == 1) {
+		if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
+		copy_to_user(&desired->statistics,st,12);
+	}
+	else return -ENSPID;
 	return 0;
 }
 

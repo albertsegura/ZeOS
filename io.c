@@ -64,7 +64,7 @@ void printk(char *string)
     printc(string[i]);
 }
 
-// Per debugging més agradable, print de unsigned ints
+/* Funció de debugging per printar enters */
 void printint(unsigned int num)
 {
 	char xifres = 0;

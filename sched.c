@@ -53,11 +53,11 @@ void cpu_idle(void)
 	}
 }
 
-int getStructPID(int PID, struct task_struct * desired) {
+int getStructPID(int PID, struct task_struct ** pointer_to_desired) {
 	int found = 0;
 
 	if (current()->PID == PID) {
-		desired = current();
+		*pointer_to_desired = current();
 		found = 1;
 	}
 
@@ -65,7 +65,7 @@ int getStructPID(int PID, struct task_struct * desired) {
 		struct list_head *first = list_first(&readyqueue);
 		if (list_head_to_task_struct(first)->PID == PID) {
 			found = 1;
-			desired = list_head_to_task_struct(first);
+			*pointer_to_desired = list_head_to_task_struct(first);
 		}
 		else {
 			list_del(&readyqueue);
@@ -76,15 +76,14 @@ int getStructPID(int PID, struct task_struct * desired) {
 			struct list_head *act = list_first(&readyqueue);
 			if (list_head_to_task_struct(act)->PID == PID) {
 				found = 1;
-				desired = list_head_to_task_struct(act);
+				*pointer_to_desired = list_head_to_task_struct(act);
 			}
 			list_del(&readyqueue);
 			list_add_tail(act, &readyqueue);
 		}
 	}
 
-	if (found == 0) return -1;
-	return 0;
+	return found;
 }
 
 

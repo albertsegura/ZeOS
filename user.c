@@ -8,29 +8,7 @@ char buff[24];
 int pid;
 
 
-long inner(long n) {
-	int i;
-	long suma;
-	suma = 0;
-	for (i=0; i<n; i++) suma = suma + i;
-	return suma;
-}
 
-long outer(long n) {
-	int i;
-	long acum;
-	acum = 0;
-	for (i=0; i<n; i++) acum = acum + inner(i);
-	return acum;
-}
-
-/*
-int add(int par1,int par2) {
-	__asm__ ( "movl 12(%ebp), %eax;"
-              "addl 8(%ebp), %eax;"
-    );
-}
-*/
 
 int __attribute__ ((__section__(".text.main")))
 main(void) {
@@ -38,9 +16,9 @@ main(void) {
     /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	int time = 0;
-	int pid;
 	char timec[11];
 	char pidc[11];
+	struct stats st;
 	
 	int ret = write(1,"Hola mon!",9);
 	if (ret == -1) perror("Error d'escriptura");
@@ -69,15 +47,27 @@ main(void) {
 	pid = fork();
 	if (pid != 0) { // Pare
 		write(1,"Soc el pare\n",12);
-		debug_task_switch();
+		//debug_task_switch();
 	}
 	else {
 		write(1,"Soc el fill\n",12);
 		exit();
 	}
 
-	ret = getpid();
+	ret = get_stats(1,&st);
+	//ret = getpid();
 	itoa(ret,pidc);
+	if (ret == -1) perror("Error de stats");
+	itoa(st.cs,pidc);
+	write(1,pidc,strlen(pidc));
+	write(1,"\n",1);
+	itoa(st.remaining_quantum,pidc);
+	write(1,pidc,strlen(pidc));
+	write(1,"\n",1);
+	itoa(st.tics,pidc);
+	write(1,pidc,strlen(pidc));
+	write(1,"\n",1);
+
 	//write(1," PID: ",6);
 	//write(1,pidc,strlen(pidc));
 	while (1) {

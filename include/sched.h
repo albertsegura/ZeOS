@@ -56,7 +56,7 @@ void task_switch(union task_union *new);
 
 int getNewPID();
 
-int getStructPID(int PID, struct task_struct * desired);
+int getStructPID(int PID, struct task_struct ** desired);
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
