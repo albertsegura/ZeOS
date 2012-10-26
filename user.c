@@ -51,7 +51,7 @@ void fork_test1() {
 		writeStats(pid);
 		exit();
 	}
-	else (pid == 0) { // Fill
+	else if (pid == 0) { // Fill
 		write(1,"\nSoc el fill",12);
 		if (-1 == write(1,"\nGetPID: ",9)) perror("Error d'escriptura");
 		pid = getpid();
