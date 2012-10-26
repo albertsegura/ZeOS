@@ -221,7 +221,7 @@ void sched_switch_process_RR() {
 	task->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 	rr_quantum = DEFAULT_RR_QUANTUM;
 
-	task_switch((union task_union*)task);
+	if (task != current()) task_switch((union task_union*)task);
 }
 
 void sched_update_queues_state_RR(struct list_head* ls) {
