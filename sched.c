@@ -53,22 +53,36 @@ void cpu_idle(void)
 	}
 }
 
-int getStructPID(int PID, union task_union * desired) {
+int getStructPID(int PID, struct task_struct * desired) {
 	int found = 0;
-	int i;
-	struct task_struct * current_task = current();
-	if (current_task->PID == PID) {
-		desired = current;
+
+	if (current()->PID == PID) {
+		desired = current();
 		found = 1;
 	}
-	// TODO recorrer cua correctament
-	while () {
-		if (->PID == PID) {
-			desired = current;
+
+	if (!list_empty(&readyqueue) && (found == 0)) {
+		struct list_head *first = list_first(&readyqueue);
+		if (list_head_to_task_struct(first)->PID == PID) {
 			found = 1;
+			desired = list_head_to_task_struct(first);
 		}
-		next elem;
+		else {
+			list_del(&readyqueue);
+			list_add_tail(first, &readyqueue);
+		}
+
+		while(first != list_first(&readyqueue)) {
+			struct list_head *act = list_first(&readyqueue);
+			if (list_head_to_task_struct(act)->PID == PID) {
+				found = 1;
+				desired = list_head_to_task_struct(act);
+			}
+			list_del(&readyqueue);
+			list_add_tail(act, &readyqueue);
+		}
 	}
+
 	if (found == 0) return -1;
 	return 0;
 }
@@ -100,8 +114,9 @@ void init_idle (void) {
 	idle_union_stack->task.kernel_esp = (unsigned long)&idle_union_stack->stack[1022];
 
 	// Inicialitzacio estadistica
-	idle_task->statistics->cs = 0;
-	idle_task->statistics->tics = 0;
+	idle_task->statistics.cs = 0;
+	idle_task->statistics.tics = 0;
+	idle_task->statistics.remaining_quantum = 0;
 }
 
 void init_task1(void) {
@@ -111,13 +126,12 @@ void init_task1(void) {
 	page_table_entry * dir_task1 = get_DIR(task1_task_struct);
 
 	task1_task_struct->PID = 1;
-	//task1_task_struct->quantum = RR_QUANTUM; // TODO donar-li quantum
 	set_user_pages(task1_task_struct);
 	set_cr3(dir_task1);
 
 	// Inicialitzacio estadistica
-	task1_task_struct->statistics->cs = 0;
-	task1_task_struct->statistics->tics = 0;
+	task1_task_struct->statistics.cs = 0;
+	task1_task_struct->statistics.tics = 0;
 }
 
 
@@ -130,7 +144,7 @@ void task_switch(union task_union *new) {
 	struct task_struct * current_task_struct = current();
 	page_table_entry * dir_new = get_DIR((struct task_struct *) new);
 
-	tss.esp0 = (unsigned long)&new->stack[KERNEL_STACK_SIZE]; // TODO o 1023?
+	tss.esp0 = (unsigned long)&new->stack[KERNEL_STACK_SIZE];
 	set_cr3(dir_new);
 
 	unsigned long *kernel_esp = &current_task_struct->kernel_esp;
@@ -146,8 +160,7 @@ void task_switch(union task_union *new) {
   );
 }
 
-/* Retorna el lastPID assignat +1.
- *  TODO Si s'arriba al overflow es pot controlar i mirar quin esta lliure*/
+/* Retorna el lastPID assignat +1 */
 int getNewPID() {
 	return ++lastPID;
 }
@@ -177,7 +190,7 @@ void init_Sched_RR() {
 
 	//Inicialitzacio estadistica
 	struct task_struct * current_task = current();
-	current_task->statistics->remaining_quantum = DEFAULT_RR_QUANTUM;
+	current_task->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 }
 
 void sched_update_data_RR() {
@@ -185,35 +198,35 @@ void sched_update_data_RR() {
 
 	// Actualitzacio estadistica
 	struct task_struct * current_task = current();
-	--current_task->statistics->remaining_quantum;
-	++current_task->statistics->tics;
+	--current_task->statistics.remaining_quantum;
+	++current_task->statistics.tics;
 }
 
 int sched_change_needed_RR() {
 	return rr_quantum == 0;
 }
 
-void sched_switch_process_RR(struct task_struct * new_task, int exit) {
-	struct task_struct * current_task = current();
+
+void sched_switch_process_RR() {
+	struct list_head *task_list;
+	struct task_struct * task;
+
+	if (!list_empty(&readyqueue)) {
+		task_list = list_first(&readyqueue);
+		list_del(task_list);
+		task = list_head_to_task_struct(task_list);
+	}
+	else task = idle_task;
+
+	if (task != current()) ++task->statistics.cs;
+	task->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 	rr_quantum = DEFAULT_RR_QUANTUM;
 
-	if (new_task != current_task) {
-		if (exit) list_add_tail(&current_task->list,&freequeue);
-		else list_add_tail(&current_task->list,&readyqueue);
-
-		// Actualitzacio estadistica
-		++current_task->statistics->cs;
-		current_task->statistics->remaining_quantum = DEFAULT_RR_QUANTUM;
-
-		task_switch((union task_union*)new_task);
-	}
+	task_switch((union task_union*)task);
 }
 
-struct task_struct * sched_update_queues_state_RR(int exit) {
-		if (list_empty(&readyqueue)) return current();
-		else if (exit) return idle_task;
+void sched_update_queues_state_RR(struct list_head* ls) {
+	struct task_struct * current_task = current();
+	list_add_tail(&current_task->list,ls);
 
-		struct list_head *new_list_task = list_first(&readyqueue);
-		list_del(new_list_task);
-		return list_head_to_task_struct(new_list_task);
 }

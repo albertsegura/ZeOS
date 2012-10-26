@@ -36,7 +36,8 @@ int sys_getpid()
 	return current()->PID;
 }
 
-int sys_DEBUG_tswitch() { // TODO REMOVE DEBUG
+/* Funció de debug per al task_switch */
+int sys_DEBUG_tswitch() {
 	struct list_head *new_list_task = list_first(&readyqueue);
 	list_del(new_list_task);
 	struct task_struct * new_task = list_head_to_task_struct(new_list_task);
@@ -55,7 +56,7 @@ int sys_fork()
   unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
 
   /* Punt a: Obtenció d'una task_struct nova de la freequeue */
-  if (list_empty(&freequeue)) return -1; // TODO Crear errno
+  if (list_empty(&freequeue)) return -ENTASK;
 
   struct list_head *new_list_pointer = list_first(&freequeue);
 	list_del(new_list_pointer);
@@ -82,10 +83,6 @@ int sys_fork()
 	page_table_entry * pt_current = get_PT(current_pcb);
 	page_table_entry * dir_current = get_DIR(current_pcb);
 
-	// Inicialitzacio estadistica
-	new_pcb->statistics->tics = 0;
-	new_pcb->statistics->cs = 0;
-
 	int pag;
 	int new_ph_pag;
 
@@ -98,7 +95,7 @@ int sys_fork()
 	/* DATA + Punt b: Obtenció de pàgines físiques */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		new_ph_pag=alloc_frame();
-		if (new_ph_pag == -1) return -1; // TODO Crear errno
+		if (new_ph_pag == -1) return -ENMPHP;
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,new_ph_pag);
 	}
 
@@ -130,9 +127,9 @@ int sys_fork()
 	// Modificant la funció a on retornarà
 	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
 
-	// TODO Preguntar si es necessari modificar-lo, doncs en principi, en mode sistema no ens afecta:
-	// despres del ret_from_fork fem un iret (per tant no ens importa el ebp, aquest)
-	//new_stack->stack[pos_ebp] = &ret_from_fork; // el ebp del nou proces hauria de ser diferent...
+	/* Inicialització estadistica */
+	new_stack->task.statistics.tics = 0;
+	new_stack->task.statistics.cs = 0;
 
 	/* Pag 36 Punt h */
 	list_add_tail(&new_pcb->list,&readyqueue);
@@ -149,8 +146,8 @@ void sys_exit() {
 		free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
 	/* Pag 38 Punt b */
-	struct task_struct * next_task = sched_update_queues_state(1);
-	sched_switch_process(next_task,1);
+	sched_update_queues_state(&freequeue);
+	sched_switch_process();
 }
 
 int sys_write(int fd, char * buffer, int size) {
@@ -159,7 +156,7 @@ int sys_write(int fd, char * buffer, int size) {
 	
 	ret = check_fd(fd,ESCRIPTURA);
 	if (ret != 0) return ret;
-  	if (buffer == NULL) return -EPNULL;
+  if (buffer == NULL) return -EPNULL;
 	if (size <= 0) return -ESIZEB;
 	if (access_ok(VERIFY_READ, buffer, size) == 0) return -ENACCB;
 
@@ -181,13 +178,14 @@ int sys_gettime() {
 }
 
 int sys_get_stats(int pid, struct stats *st) {
-	// TODO estructura correcta?
-	union task_union * desired;
+	struct task_struct * desired;
+
+
 	int found = getStructPID(pid, desired);
-	if (found == 0) return -1;
-	st->tics = desired->task->statistics->tics;
-	st->remaining_quantum = desired->task->statistics->remaining_quantum;
-	st->cs = desired->task->statistics->cs;
+	if (found == -1) return -ENSPID;
+
+	if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
+	copy_to_user(&desired->statistics,st,12);
 	return 0;
 }
 

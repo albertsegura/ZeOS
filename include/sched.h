@@ -8,6 +8,7 @@
 #include <list.h>
 #include <types.h>
 #include <mm_address.h>
+#include <stats.h>
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
@@ -55,7 +56,7 @@ void task_switch(union task_union *new);
 
 int getNewPID();
 
-int getStructPID(int PID, union task_union * desired);
+int getStructPID(int PID, struct task_struct * desired);
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
@@ -75,10 +76,10 @@ void (* sched_update_data)();
 int (* sched_change_needed)();
 
 /* Select the next process to run and perform a process switch. */
-void (* sched_switch_process)(struct task_struct * new_task, int exit);
+void (* sched_switch_process)();
 
 /* Update queues and state of processes.*/
-struct task_struct * (* sched_update_queues_state)(int exit);
+void (* sched_update_queues_state)(struct list_head* ls);
 
 /* Inicialització de la politica de scheduler Round Robin */
 void init_Sched_RR();
@@ -87,8 +88,8 @@ void sched_update_data_RR();
 
 int sched_change_needed_RR();
 
-void sched_switch_process_RR(struct task_struct * new_task, int exit);
+void sched_switch_process_RR();
 
-struct task_struct * sched_update_queues_state_RR(int exit);
+void sched_update_queues_state_RR(struct list_head* ls);
 
 #endif  /* __SCHED_H__ */

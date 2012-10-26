@@ -126,8 +126,12 @@ int get_stats(int pid, struct stats *st) {
 				"int $0x80"
 				:"=a" (ret),
 				"+b" (pid),
-				"+c" (st),
+				"+c" (st)
 				:"a" (35)
 	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
 	return ret;
 }

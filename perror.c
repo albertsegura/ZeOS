@@ -11,11 +11,15 @@ char *sys_errlist[] = {
 /*	ENOSYS 3		*/ "Function not implemented",
 /*	EPNULL 4		*/ "Pointer is null",
 /*	ESIZEB 5		*/ "Size is not positive",
-/*	ENACCB 6		*/ "Can't access pointer"
+/*	ENACCB 6		*/ "Can't access pointer",
+/*	ENTASK 7		*/ "There are no more free tasks",
+/*	ENMPHP 8		*/ "There are no more free physical pages",
+/*	ENSPID 9		*/ "There is no task with the specified pid"
+// Afegir coma al penultim element, i incrementar el max
 
 };
 
-int sys_nerr = 6; // Max number
+int sys_nerr = 9; // Max number
 
 void perror(char *s) {
 	char *cp = sys_errlist[errno];
