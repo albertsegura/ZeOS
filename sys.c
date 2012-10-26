@@ -42,9 +42,11 @@ int sys_DEBUG_tswitch() {
 	list_del(new_list_task);
 	struct task_struct * new_task = list_head_to_task_struct(new_list_task);
 	struct task_struct * current_task = current();
-	union task_union *new_stack = (union task_union*)new_task;
+
 	list_add_tail(&current_task->list,&readyqueue);
-	task_switch(new_stack);
+
+	task_switch((union task_union*)new_task);
+
 	return 0;
 }
 
@@ -88,8 +90,7 @@ int sys_fork()
 
 	/* CODE */
 	for (pag=0;pag<NUM_PAG_CODE;pag++){
-		pt_new[PAG_LOG_INIT_CODE_P0+pag].entry =
-				pt_current[PAG_LOG_INIT_CODE_P0+pag].entry;
+		pt_new[PAG_LOG_INIT_CODE_P0+pag].entry = pt_current[PAG_LOG_INIT_CODE_P0+pag].entry;
 	}
 
 	/* DATA + Punt b: Obtenció de pàgines físiques */

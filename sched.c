@@ -131,13 +131,12 @@ void init_task1(void) {
 	// Inicialitzacio estadistica
 	task1_task_struct->statistics.cs = 0;
 	task1_task_struct->statistics.tics = 0;
+	task1_task_struct->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 }
-
 
 void init_sched() {
 	init_Sched_RR();
 }
-
 
 void task_switch(union task_union *new) {
 	struct task_struct * current_task_struct = current();
@@ -159,7 +158,6 @@ void task_switch(union task_union *new) {
   );
 }
 
-/* Retorna el lastPID assignat +1 */
 int getNewPID() {
 	return ++lastPID;
 }
@@ -205,7 +203,6 @@ int sched_change_needed_RR() {
 	return rr_quantum == 0;
 }
 
-
 void sched_switch_process_RR() {
 	struct list_head *task_list;
 	struct task_struct * task;
@@ -217,11 +214,12 @@ void sched_switch_process_RR() {
 	}
 	else task = idle_task;
 
-	if (task != current()) ++task->statistics.cs;
 	task->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 	rr_quantum = DEFAULT_RR_QUANTUM;
-
-	if (task != current()) task_switch((union task_union*)task);
+	if (task != current()) {
+		++task->statistics.cs;
+		task_switch((union task_union*)task);
+	}
 }
 
 void sched_update_queues_state_RR(struct list_head* ls) {

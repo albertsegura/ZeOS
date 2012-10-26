@@ -41,7 +41,7 @@ void fork_test1() {
 	struct stats st;
 	char pidc[11];
 	pid = fork();
-	if (pid != 0) { // Pare
+	if (pid > 0) { // Pare
 		write(1,"\nSoc el pare",12);
 		if (-1 == write(1,"\nGetPID: ",9)) perror("Error d'escriptura");
 		pid = getpid();
@@ -51,7 +51,7 @@ void fork_test1() {
 		writeStats(pid);
 		exit();
 	}
-	else { // Fill
+	else (pid == 0) { // Fill
 		write(1,"\nSoc el fill",12);
 		if (-1 == write(1,"\nGetPID: ",9)) perror("Error d'escriptura");
 		pid = getpid();
@@ -62,6 +62,7 @@ void fork_test1() {
 		//if (-1 == write(1,"\nExit fill: ",12)) perror("Error d'escriptura");
 		//exit();
 	}
+	else perror("Error en el fork");
 
 	while (1) {
 		pid = getpid();
@@ -87,7 +88,7 @@ void fork_test1() {
  *   -> (2) -> f -> (2) /X
  * 							 -> (3) -> f -> (3) /X
  * 							 						 -> (4) /X
- *
+ *																	.... (9)
  *
  */
 void fork_test2() {
@@ -95,9 +96,9 @@ void fork_test2() {
 	pid = 0;
 	char pidc[11];
 	int pidf = 0;
-	for (i = 0; i<3 && pidf == 0; ++i) {
+	for (i = 0; i<10 && pidf == 0; ++i) { // 10 aposta, per provocar perror. Aconsellabe reduir quantum
 		pidf = fork();
-		if (pidf != 0) { // pare
+		if (pidf > 0) { // pare
 			write(1,"\nSoc el pare",12);
 			if (-1 == write(1,"\nGetPID: ",9)) perror("Error d'escriptura");
 			pid = getpid();
@@ -106,7 +107,7 @@ void fork_test2() {
 			if (-1 == write(1,"\nGetStats: ",11)) perror("Error d'escriptura");
 			writeStats(pid);
 		}
-		else {
+		else if (pidf == 0) {
 			write(1,"\nSoc el fill",12);
 			if (-1 == write(1,"\nGetPID: ",9)) perror("Error d'escriptura");
 			pid = getpid();
@@ -115,6 +116,7 @@ void fork_test2() {
 			if (-1 == write(1,"\nGetStats: ",11)) perror("Error d'escriptura");
 			writeStats(pid);
 		}
+		else perror("Error en el fork");
 	}
 }
 
@@ -142,7 +144,7 @@ main(void) {
 	if (-1 == write(1,"\nFork: ",7)) perror("Error d'escriptura");
 
 	//fork_test1();
-	//fork_test2();
+	fork_test2();
 
 
 	while (1);

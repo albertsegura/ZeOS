@@ -65,7 +65,9 @@ page_table_entry * get_PT (struct task_struct *t) ;
 page_table_entry * get_DIR (struct task_struct *t) ;
 
 
+
 /* SCHEDULER */
+
 
 /* Update policy data (update tics in the case of a round robin, update priorities, etc.).
  * There can be a generic function that calls one or another function based on a global
