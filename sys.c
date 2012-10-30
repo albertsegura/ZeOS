@@ -56,6 +56,9 @@ int sys_fork()
 
   int current_ebp = 0;
   unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
+	int pag;
+	int new_ph_pag;
+  int frames[NUM_PAG_DATA];
 
   /* Punt a: Obtenció d'una task_struct nova de la freequeue */
   if (list_empty(&freequeue)) return -ENTASK;
@@ -74,19 +77,26 @@ int sys_fork()
 	  );
 	pos_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)/4;
 
+	/* Punt b: Obtenció dels frames per al nou procés */
+	for (pag=0;pag<NUM_PAG_DATA;pag++){
+		new_ph_pag=alloc_frame();
+		if (new_ph_pag == -1) {
+			while(pag != 0) free_frame(frames[--pag]);
+			return -ENMPHP;
+		}
+		else frames[pag] = new_ph_pag;
+	}
+
 	/* Punt c: Copia del Stack, i restauració del directori del fill*/
 	page_table_entry * copy_dir_pages_baseAddr = get_DIR(new_pcb);
 	copy_data(current_pcb, new_pcb, 4096);
 	new_pcb->dir_pages_baseAddr = copy_dir_pages_baseAddr;
 
 	/* Punt d.i: Copia de les page tables de codi, i assignació de
-	 * 						frames per a les dades*/
+	 * 						frames per a les dades	*/
 	page_table_entry * pt_new = get_PT(new_pcb);
 	page_table_entry * pt_current = get_PT(current_pcb);
 	page_table_entry * dir_current = get_DIR(current_pcb);
-
-	int pag;
-	int new_ph_pag;
 
 	/* CODE */
 	for (pag=0;pag<NUM_PAG_CODE;pag++){
@@ -95,24 +105,28 @@ int sys_fork()
 
 	/* DATA + Punt b: Obtenció de pàgines físiques */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		new_ph_pag=alloc_frame();
-		if (new_ph_pag == -1) return -ENMPHP;
-		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,new_ph_pag);
+		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,frames[pag]);
 	}
 
 	/* Punt d.ii */
-		/* d.ii.A: Assignació de noves pàgines logiques al procés actual, corresponents
-		 * 					a les pàgines físiques obtingudes per al procés nou	*/
+	int free_pag = FIRST_FREE_PAG_P;
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		set_ss_pag(pt_current, FIRST_FREE_PAG_P+pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
-	}
-		/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
-	copy_data((void *)(PAG_LOG_INIT_DATA_P0<<12),	(void *)(FIRST_FREE_PAG_P<<12), PAGE_SIZE*NUM_PAG_DATA);
+			while(pt_current[free_pag].entry != 0) free_pag++;
 
-		/* d.ii.C: Desassignació de les pagines en el procés actual, i flush de la TLB */
-	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		del_ss_pag(pt_current, FIRST_FREE_PAG_P+pag);
+			/* d.ii.A: Assignació de noves pàgines logiques al procés actual, corresponents
+			 * 					a les pàgines físiques obtingudes per al procés nou	*/
+			set_ss_pag(pt_current,free_pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+
+			/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
+			copy_data((void *)((PAG_LOG_INIT_DATA_P0+pag)<<12),	(void *)(free_pag<<12), PAGE_SIZE);
+
+			/* d.ii.C: Desassignació de les pagines en el procés actual */
+			del_ss_pag(pt_current, free_pag);
+
+			free_pag++;
 	}
+
+	/* Flush de la TLB */
 	set_cr3(dir_current);
 
 	/* Pag 36 Punt e */
@@ -120,7 +134,6 @@ int sys_fork()
 	new_pcb->PID = PID;
 
 	/* Pag 36 Punt f i g */
-
 	// eax del Save_all (Serà el pid de retorn del fill)
 	new_stack->stack[pos_ebp+8] = 0;
 	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
