@@ -52,20 +52,17 @@ int sys_DEBUG_tswitch() {
 
 int sys_fork()
 {
-  int PID=-1;
-
-  int current_ebp = 0;
-  unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
+	int PID;
+	int current_ebp = 0;
+	unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
 	int pag;
 	int new_ph_pag;
-  int frames[NUM_PAG_DATA];
+	int frames[NUM_PAG_DATA];
 
-  /* Punt a: Obtenció d'una task_struct nova de la freequeue */
-  if (list_empty(&freequeue)) return -ENTASK;
-
-  struct list_head *new_list_pointer = list_first(&freequeue);
+	/* Punt a: Obtenció d'una task_struct nova de la freequeue */
+	if (list_empty(&freequeue)) return -ENTASK;
+	struct list_head *new_list_pointer = list_first(&freequeue);
 	list_del(new_list_pointer);
-
 	struct task_struct * new_pcb = list_head_to_task_struct(new_list_pointer);
 	struct task_struct * current_pcb = current();
 	union task_union *new_stack = (union task_union*)new_pcb;
@@ -149,7 +146,7 @@ int sys_fork()
 	/* Punt h */
 	list_add_tail(&new_pcb->list,&readyqueue);
 
-  return PID;
+	return PID;
 }
 
 void sys_exit() {
