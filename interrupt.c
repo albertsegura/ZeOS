@@ -97,7 +97,7 @@ void clock_routine() {
 	zeos_show_clock();
 	sched_update_data();
 	if (sched_change_needed()) {
-		sched_update_queues_state_RR(&readyqueue);
+		sched_update_queues_state(&readyqueue);
 		sched_switch_process();
 	}
 }

@@ -22,6 +22,7 @@ struct task_struct {
   struct list_head list;
   unsigned long kernel_esp;
   struct stats statistics;
+  enum state_t process_state;
 };
 
 union task_union {

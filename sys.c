@@ -129,11 +129,11 @@ int sys_fork()
 	/* Flush de la TLB */
 	set_cr3(dir_current);
 
-	/* Pag 36 Punt e */
+	/* Punt e */
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
-	/* Pag 36 Punt f i g */
+	/* Punt f i g */
 	// eax del Save_all (Serà el pid de retorn del fill)
 	new_stack->stack[pos_ebp+8] = 0;
 	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
@@ -142,24 +142,28 @@ int sys_fork()
 	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
 
 	/* Inicialització estadistica */
+	new_stack->task.process_state = ST_READY;
 	new_stack->task.statistics.tics = 0;
 	new_stack->task.statistics.cs = 0;
 
-	/* Pag 36 Punt h */
+	/* Punt h */
 	list_add_tail(&new_pcb->list,&readyqueue);
 
   return PID;
 }
 
 void sys_exit() {
-	/* Pag 38 Punt a */
+	/* Punt a */
 	int pag;
 	struct task_struct * current_pcb = current();
 	page_table_entry * pt_current = get_PT(current_pcb);
+
+	// Allibera només 20 page de Data del procés, canviar en Mem.dinamica
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 	}
-	/* Pag 38 Punt b */
+
+	/* Punt b */
 	sched_update_queues_state(&freequeue);
 	sched_switch_process();
 }
