@@ -146,7 +146,6 @@ main(void) {
 	//fork_test1();
 	fork_test2();
 
-
 	while (1);
 	return 0;
 }
