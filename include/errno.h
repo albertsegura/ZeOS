@@ -12,6 +12,7 @@ extern int errno;
 #define ENTASK 7 /* There are no more free tasks */
 #define ENMPHP 8 /* There are no more free physical pages */
 #define ENSPID 9 /* There is no task with the specified pid */
+#define ENEPTE 10 /* There are no enough page table entries for the process */
 
 #endif
 

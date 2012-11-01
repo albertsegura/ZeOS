@@ -14,12 +14,12 @@ char *sys_errlist[] = {
 /*	ENACCB 6		*/ "Can't access pointer",
 /*	ENTASK 7		*/ "There are no more free tasks",
 /*	ENMPHP 8		*/ "There are no more free physical pages",
-/*	ENSPID 9		*/ "There is no task with the specified pid"
+/*	ENSPID 9		*/ "There is no task with the specified pid",
+/*	ENEPTE 10		*/ "There are no enough page table entries for the process"
 // Afegir coma al penultim element, i incrementar el max
-
 };
 
-int sys_nerr = 9; // Max number
+int sys_nerr = 10; // Max number
 
 void perror(char *s) {
 	char *cp = sys_errlist[errno];

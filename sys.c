@@ -106,21 +106,38 @@ int sys_fork()
 	}
 
 	/* Punt d.ii */
+	/* Gestió extra per evitar problemes amb Memoria dinàmica:
+	 * 	- Busquem entrades a la page_table lliures, en comptes de 20 directes
+	 * 	- Si arribem al limit sense haver-ne trobat ni una retornem error, doncs
+	 * 		no es pot fer el fork per falta de page tables entry al pare.
+	 * 	- Si arribem al limit però hem pogut fer almenys una copia:
+	 * 		flush a la TLB i tornem a buscar desde el principi.
+	 * */
 	int free_pag = FIRST_FREE_PAG_P;
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
-			while(pt_current[free_pag].entry != 0) free_pag++;
+			while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
 
-			/* d.ii.A: Assignació de noves pàgines logiques al procés actual, corresponents
-			 * 					a les pàgines físiques obtingudes per al procés nou	*/
-			set_ss_pag(pt_current,free_pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+			if (free_pag == TOTAL_PAGES) {
+				if (pag != 0) {
+					free_pag = FIRST_FREE_PAG_P;
+					--pag;
+					set_cr3(dir_current);
+				}
+				else return -ENEPTE;
+			}
+			else {
+				/* d.ii.A: Assignació de noves pàgines logiques al procés actual, corresponents
+				 * 					a les pàgines físiques obtingudes per al procés nou	*/
+				set_ss_pag(pt_current,free_pag,pt_new[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
 
-			/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
-			copy_data((void *)((PAG_LOG_INIT_DATA_P0+pag)<<12),	(void *)(free_pag<<12), PAGE_SIZE);
+				/* d.ii.B: Copia de l'espai d'usuari del proces actual al nou */
+				copy_data((void *)((PAG_LOG_INIT_DATA_P0+pag)<<12),	(void *)(free_pag<<12), PAGE_SIZE);
 
-			/* d.ii.C: Desassignació de les pagines en el procés actual */
-			del_ss_pag(pt_current, free_pag);
+				/* d.ii.C: Desassignació de les pagines en el procés actual */
+				del_ss_pag(pt_current, free_pag);
 
-			free_pag++;
+				free_pag++;
+			}
 	}
 
 	/* Flush de la TLB */
