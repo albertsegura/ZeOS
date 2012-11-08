@@ -100,7 +100,7 @@ int sys_fork()
 		pt_new[PAG_LOG_INIT_CODE_P0+pag].entry = pt_current[PAG_LOG_INIT_CODE_P0+pag].entry;
 	}
 
-	/* DATA + Punt b: Obtenció de pàgines físiques */
+	/* DATA */
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,frames[pag]);
 	}
