@@ -210,7 +210,7 @@ int sys_gettime() {
 
 int sys_get_stats(int pid, struct stats *st) {
 	struct task_struct * desired;
-	int found = getStructPID(pid, &desired);
+	int found = getStructPID(pid, &desired); // TODO Amb procesos bloquejats s'hauria de modificar la cua on es busca
 
 	if (found == 1) {
 		if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
