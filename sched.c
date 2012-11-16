@@ -124,7 +124,7 @@ void init_task1(void) {
 	struct list_head *task1_list_pointer = list_first(&freequeue);
 	list_del(task1_list_pointer);
 	struct task_struct * task1_task_struct = list_head_to_task_struct(task1_list_pointer);
-	allocate_page_dir (task1_task_struct);
+	allocate_page_dir(task1_task_struct);
 	page_table_entry * dir_task1 = get_DIR(task1_task_struct);
 
 	task1_task_struct->PID = 1;

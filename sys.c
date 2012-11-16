@@ -86,11 +86,12 @@ int sys_clone (void (*function)(void), void *stack) {
 
 	/* Punt f i g */
 	// eax del Save_all (Serà el pid de retorn del fill)
-	new_stack->stack[pos_ebp+8] = 0;
+	new_stack->stack[pos_ebp+8] = PID;
 	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
 	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
 	// Modificant la funció a on retornarà
-	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
+	new_stack->stack[pos_ebp+1] = (unsigned int)&function;
+	new_stack->stack[pos_ebp+16] = (unsigned int)stack;
 
 	/* Inicialització estadistica */
 	new_stack->task.process_state = ST_READY;

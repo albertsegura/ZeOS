@@ -50,8 +50,8 @@ for (i = 0; i< NR_TASKS; i++) {
   dir_pages[i][ENTRY_DIR_PAGES].bits.rw = 1;
   dir_pages[i][ENTRY_DIR_PAGES].bits.present = 1;
   assigned_dir[i] = 0;
-  // TODO Veure si es necessari o es pot treure
-  //task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
+  // Es necessaria, just després es fa un set_cr3. Si no es fa això peta.
+  task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
 
 }
 
@@ -274,11 +274,11 @@ unsigned int get_frame (page_table_entry *PT, unsigned int logical_page){
 void allocate_page_dir (struct task_struct *p) {
 	int i;
 	char found = 0;
-	for (i=0; i<NR_TASKS & !found; ++i) {
+	for (i=0; i<NR_TASKS && !found; ++i) {
 		found = (assigned_dir[i] == 0);
 	}
 	--i;
-	p->dir_pages_baseAddr = &dir_pages[i];
+	p->dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
 	p->dir_count = &assigned_dir[i];
 	assigned_dir[i] = 1;
 }
