@@ -26,4 +26,6 @@ void exit();
 
 int get_stats(int pid, struct stats *st);
 
+int clone (void (*function)(void), void *stack);
+
 #endif  /* __LIBC_H__ */

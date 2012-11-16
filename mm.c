@@ -25,6 +25,9 @@ page_table_entry dir_pages[NR_TASKS][TOTAL_PAGES]
 page_table_entry pagusr_table[NR_TASKS][TOTAL_PAGES]
   __attribute__((__section__(".data.task")));
 
+/*Contador dels punters a un mateix directori de memoria. */
+Byte assigned_dir[NR_TASKS];
+
 /* TSS */
 TSS         tss; 
 
@@ -46,8 +49,10 @@ for (i = 0; i< NR_TASKS; i++) {
   dir_pages[i][ENTRY_DIR_PAGES].bits.user = 1;
   dir_pages[i][ENTRY_DIR_PAGES].bits.rw = 1;
   dir_pages[i][ENTRY_DIR_PAGES].bits.present = 1;
+  assigned_dir[i] = 0;
+  // TODO Veure si es necessari o es pot treure
+  //task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
 
-  task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
 }
 
 }
@@ -264,3 +269,18 @@ void del_ss_pag(page_table_entry *PT, unsigned logical_page)
 unsigned int get_frame (page_table_entry *PT, unsigned int logical_page){
      return PT[logical_page].bits.pbase_addr; 
 }
+
+/* allocate_page_dir - Assignate Returns the physical frame associated to page 'logical_page' */
+void allocate_page_dir (struct task_struct *p) {
+	int i;
+	char found = 0;
+	for (i=0; i<NR_TASKS & !found; ++i) {
+		found = (assigned_dir[i] == 0);
+	}
+	--i;
+	p->dir_pages_baseAddr = &dir_pages[i];
+	p->dir_count = &assigned_dir[i];
+	assigned_dir[i] = 1;
+}
+
+

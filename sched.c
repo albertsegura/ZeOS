@@ -101,6 +101,7 @@ void init_readyqueue (void) {
 }
 
 void init_idle (void) {
+	// TODO Check task_union ?
 	struct list_head *idle_list_pointer = list_first(&freequeue);
 	list_del(idle_list_pointer);
 	idle_task = list_head_to_task_struct(idle_list_pointer);
@@ -123,6 +124,7 @@ void init_task1(void) {
 	struct list_head *task1_list_pointer = list_first(&freequeue);
 	list_del(task1_list_pointer);
 	struct task_struct * task1_task_struct = list_head_to_task_struct(task1_list_pointer);
+	allocate_page_dir (task1_task_struct);
 	page_table_entry * dir_task1 = get_DIR(task1_task_struct);
 
 	task1_task_struct->PID = 1;
@@ -141,11 +143,13 @@ void init_sched() {
 }
 
 void task_switch(union task_union *new) {
+	//TODO Comprovar funcionament optimització
 	struct task_struct * current_task_struct = current();
 	page_table_entry * dir_new = get_DIR((struct task_struct *) new);
+	page_table_entry * dir_current = get_DIR(current_task_struct);
 
 	tss.esp0 = (unsigned long)&new->stack[KERNEL_STACK_SIZE];
-	set_cr3(dir_new);
+	if (dir_new != dir_current) set_cr3(dir_new);
 
 	unsigned long *kernel_esp = &current_task_struct->kernel_esp;
 	unsigned long new_kernel_esp = new->task.kernel_esp;

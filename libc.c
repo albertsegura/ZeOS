@@ -135,3 +135,26 @@ int get_stats(int pid, struct stats *st) {
 	}
 	return ret;
 }
+
+/* Wrapper de la Syscall clone */
+int clone (void (*function)(void), void *stack) {
+/*	function: starting address of the function to be executed by the new process
+ * stack : starting address of a memory region to be used as a stack
+ * returns: -1 if error or the pid of the new lightweight process ID if OK
+ */
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret),
+				"+b" (function),
+				"+c" (stack)
+				:"a" (3)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	return ret;
+}
+
+

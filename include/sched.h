@@ -23,6 +23,7 @@ struct task_struct {
   unsigned long kernel_esp;
   struct stats statistics;
   enum state_t process_state;
+  Byte *dir_count; /* Punter al contador de referencies al directori propi. */
 };
 
 union task_union {

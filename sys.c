@@ -50,6 +50,59 @@ int sys_DEBUG_tswitch() {
 	return 0;
 }
 
+
+int sys_clone (void (*function)(void), void *stack) {
+	int PID;
+	int current_ebp = 0;
+	unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
+	int pag;
+	int new_ph_pag;
+
+	/* Punt a: Obtenció d'una task_struct nova de la freequeue */
+	if (list_empty(&freequeue)) return -ENTASK;
+	struct list_head *new_list_pointer = list_first(&freequeue);
+	list_del(new_list_pointer);
+	struct task_struct * new_pcb = list_head_to_task_struct(new_list_pointer);
+	struct task_struct * current_pcb = current();
+	union task_union *new_stack = (union task_union*)new_pcb;
+
+	/* Càlcul de pos_ebp */
+	__asm__ __volatile__(
+	  		"mov %%ebp,%0;"
+	  		: "=r" (current_ebp)
+	  );
+	pos_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)/4;
+
+
+	/* Punt c: Copia del Stack, i restauració del directori del fill*/
+	copy_data(current_pcb, new_pcb, 4096);
+	*(new_pcb->dir_count) += 1;
+
+	/* Punt e */
+	PID = getNewPID();
+	new_pcb->PID = PID;
+
+	// TODO A continuar aqui
+
+	/* Punt f i g */
+	// eax del Save_all (Serà el pid de retorn del fill)
+	new_stack->stack[pos_ebp+8] = 0;
+	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
+	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
+	// Modificant la funció a on retornarà
+	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
+
+	/* Inicialització estadistica */
+	new_stack->task.process_state = ST_READY;
+	new_stack->task.statistics.tics = 0;
+	new_stack->task.statistics.cs = 0;
+
+	/* Punt h */
+	list_add_tail(&new_pcb->list,&readyqueue);
+
+	return PID;
+}
+
 int sys_fork()
 {
 	int PID;
@@ -85,9 +138,10 @@ int sys_fork()
 	}
 
 	/* Punt c: Copia del Stack, i restauració del directori del fill*/
-	page_table_entry * copy_dir_pages_baseAddr = get_DIR(new_pcb);
+	//page_table_entry * copy_dir_pages_baseAddr = get_DIR(new_pcb);
 	copy_data(current_pcb, new_pcb, 4096);
-	new_pcb->dir_pages_baseAddr = copy_dir_pages_baseAddr;
+	allocate_page_dir(new_pcb);
+	//new_pcb->dir_pages_baseAddr = copy_dir_pages_baseAddr;
 
 	/* Punt d.i: Copia de les page tables de codi, i assignació de
 	 * 						frames per a les dades	*/
@@ -173,9 +227,12 @@ void sys_exit() {
 	page_table_entry * pt_current = get_PT(current_pcb);
 
 	// Allibera només 20 page de Data del procés, canviar en Mem.dinamica
-	for (pag=0;pag<NUM_PAG_DATA;pag++){
-		free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+	if (*(current_pcb->dir_count) == 1) {
+		for (pag=0;pag<NUM_PAG_DATA;pag++){
+			free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+		}
 	}
+	*(current_pcb->dir_count) -= 1;
 
 	/* Punt b */
 	sched_update_queues_state(&freequeue);
@@ -219,7 +276,5 @@ int sys_get_stats(int pid, struct stats *st) {
 	else return -ENSPID;
 	return 0;
 }
-
-
 
 
