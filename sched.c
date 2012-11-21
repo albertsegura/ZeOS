@@ -101,7 +101,6 @@ void init_readyqueue (void) {
 }
 
 void init_idle (void) {
-	// TODO Check task_union ?
 	struct list_head *idle_list_pointer = list_first(&freequeue);
 	list_del(idle_list_pointer);
 	idle_task = list_head_to_task_struct(idle_list_pointer);

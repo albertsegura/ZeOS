@@ -129,6 +129,7 @@ main(void) {
 	char timec[11];
 	char pidc[11];
 	clearScreen();
+	clone(fork_test2, &time);
 	if (-1 == write(1,"\n*****  ZEOS SO task1: Hola mon!  *****\n",40)) perror("Error d'escriptura");
 	if (-1 == write(1,"Execucio de Syscalls:\n",22)) perror("Error d'escriptura");
 	if (-1 == write(1,"GetTime: ",9)) perror("Error d'escriptura");
