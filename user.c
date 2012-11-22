@@ -120,16 +120,40 @@ void fork_test2() {
 	}
 }
 
+void cloneHello() {
+	write(1,"Hola vinc del clone\n",20);
+	while(1) write(1,"Clone\n",6);
+}
+
 int __attribute__ ((__section__(".text.main")))
 main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
     /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	int time = 0;
+	char stack[1024];
 	char timec[11];
 	char pidc[11];
+
+	int pid = 1;
 	clearScreen();
-	clone(fork_test2, &time);
+
+	clone(cloneHello, &stack[1024]);
+	//pid = fork();
+	//if (pid > 0) { // Pare
+			//write(1,"Soc el pare\n",12);
+			write(1,"Hola jo no vinc del clone\n",26);
+	//}
+	/*else if(pid == 0) {
+		write(1,"Soc el fill\n",12);
+		write(1,"Hola jo no vinc del clone\n",26);
+	}*/
+	while(1) {
+		if (pid > 0) write(1,"Father\n",7);
+		//else write(1,"Child\n",6);
+	}
+
+	/*
 	if (-1 == write(1,"\n*****  ZEOS SO task1: Hola mon!  *****\n",40)) perror("Error d'escriptura");
 	if (-1 == write(1,"Execucio de Syscalls:\n",22)) perror("Error d'escriptura");
 	if (-1 == write(1,"GetTime: ",9)) perror("Error d'escriptura");
@@ -146,6 +170,7 @@ main(void) {
 
 	//fork_test1();
 	fork_test2();
+	*/
 
 	while (1);
 	return 0;

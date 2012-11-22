@@ -82,16 +82,32 @@ int sys_clone (void (*function)(void), void *stack) {
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
-	// TODO A continuar aqui
-
 	/* Punt f i g */
-	// eax del Save_all (Serà el pid de retorn del fill)
-	new_stack->stack[pos_ebp+8] = PID;
-	// Construint l'enllaç dinamic fent que el esp apunti al ebp guardat
+
+	/* Modificació del retorn del procés */
+	new_stack->stack[pos_ebp+8] = PID; // TODO es necesari?
+	/* Construint l'enllaç dinàmic fent que el esp apunti al ebp guardat */
 	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
-	// Modificant la funció a on retornarà
-	new_stack->stack[pos_ebp+1] = (unsigned int)&function;
-	new_stack->stack[pos_ebp+16] = (unsigned int)stack;
+
+	/* Retorn normal: Restore ALL + iret */
+	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
+
+	/* Modificació del ebp amb la @ de la stack perque al RestoreAll*/
+	new_stack->stack[pos_ebp+7] = (unsigned int)stack;
+
+	// |	epi	|
+	// |	es	|
+	// |eflags|
+	// |	esp	|
+	// |	ss	|
+
+	/* Modificació del registre eip que restaurarà el iret*/
+	new_stack->stack[pos_ebp+13] = (unsigned int)function;
+	/* stack+4 perque el proces el primer que farà serà escriure
+	 * en la 1ra posició de la stack: push   %ebp 	*/
+	new_stack->stack[pos_ebp+16] = (unsigned int)stack+4;
+
+
 
 	/* Inicialització estadistica */
 	new_stack->task.process_state = ST_READY;

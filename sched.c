@@ -142,7 +142,6 @@ void init_sched() {
 }
 
 void task_switch(union task_union *new) {
-	//TODO Comprovar funcionament optimització
 	struct task_struct * current_task_struct = current();
 	page_table_entry * dir_new = get_DIR((struct task_struct *) new);
 	page_table_entry * dir_current = get_DIR(current_task_struct);
