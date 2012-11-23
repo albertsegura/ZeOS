@@ -7,7 +7,6 @@ typedef struct {
 }Circular_Buffer;
 
 
-// TODO revisar static inline
 static inline void circularbInit(Circular_Buffer* cb, char *buf, int size) {
 	cb->buffer = buf;
 	cb->start = 0;

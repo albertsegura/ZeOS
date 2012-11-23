@@ -263,19 +263,18 @@ int sys_write(int fd, char * buffer, int size) {
 
 	while (size > 4) {
 		copy_from_user(buffer, buff, 4);
-		sys_write_console(buff,4);
+		ret += sys_write_console(buff,4);
 		buffer += 4;
 		size -= 4;
 	}
 	copy_from_user(buffer, buff, size);
-	sys_write_console(buff,size);
+	ret += sys_write_console(buff,size);
 
-	return 0;
+	return ret;
 }
 
 int sys_read(int fd, char * buffer, int size) {
 	char read;
-	struct task_struct * current_task = current();
 	int ret = 0;
 
 	ret = check_fd(fd,ESCRIPTURA);
@@ -284,42 +283,7 @@ int sys_read(int fd, char * buffer, int size) {
 	if (size <= 0) return -ESIZEB;
 	if (access_ok(VERIFY_WRITE, buffer, size) == 0) return -ENACCB;
 
-	/* Si hi han procesos bloquejats, es posa a la cua */
-	if (!list_empty(&keyboardqueue)) {
-		sched_update_queues_state(&keyboardqueue,current());
-		sched_switch_process();
-	}
-	else { /* Si no hi ha cap procés en la cua */
-
-		/* Si hi han dades suficients per proporcionar-li
-		 * al procés, es copien les dades					*/
-		if (size <= circularbNumElements(&cbuffer)) {
-			while (size > 0) {
-				circularbRead(&cbuffer,&read);
-				copy_to_user(&read, buffer, 1);
-				buffer += 1;
-				size -= 1;
-			}
-		}
-		else { /* Si no hi han dades suficients */
-			keystoread = size;
-
-			/* Si el buffer està ple es buida */
-			if (circularbIsFull(&cbuffer)) {
-				keystoread -= CBUFFER_SIZE;
-				while (!circularbIsEmpty(&cbuffer)) {
-					circularbRead(&cbuffer,&read);
-					copy_to_user(&read, buffer, 1);
-					buffer += 1;
-				}
-			}
-			keybuffer = buffer; // S'actualitza el buffer global
-
-			/* Es bloqueja i es canvia de procés*/
-			sched_update_queues_state(&keyboardqueue,current());
-			sched_switch_process();
-		}
-	}
+	ret = sys_read_keyboard(buffer,size);
 
 	return 0;
 }
@@ -331,12 +295,13 @@ int sys_gettime() {
 
 int sys_get_stats(int pid, struct stats *st) {
 	struct task_struct * desired;
-	int found = getStructPID(pid, &desired); // TODO Amb procesos bloquejats s'hauria de modificar la cua on es busca
+	int found;
+	if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
 
-	if (found == 1) {
-		if (access_ok(VERIFY_WRITE,st,12) == 0) return -ENACCB;
-		copy_to_user(&desired->statistics,st,12);
-	}
+	found = getStructPID(pid, &readyqueue, &desired);
+	if (!found) found = getStructPID(pid, &keyboardqueue, &desired);
+	if (found) copy_to_user(&desired->statistics,st,12);
+
 	else return -ENSPID;
 	return 0;
 }

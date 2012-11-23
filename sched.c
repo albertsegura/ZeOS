@@ -55,7 +55,7 @@ void cpu_idle(void)
 	}
 }
 
-int getStructPID(int PID, struct task_struct ** pointer_to_desired) {
+int getStructPID(int PID, struct list_head * queue, struct task_struct ** pointer_to_desired) {
 	int found = 0;
 
 	if (current()->PID == PID) {
@@ -63,25 +63,25 @@ int getStructPID(int PID, struct task_struct ** pointer_to_desired) {
 		found = 1;
 	}
 
-	if (!list_empty(&readyqueue) && (found == 0)) {
-		struct list_head *first = list_first(&readyqueue);
+	if (!list_empty(queue) && (found == 0)) {
+		struct list_head *first = list_first(queue);
 		if (list_head_to_task_struct(first)->PID == PID) {
 			found = 1;
 			*pointer_to_desired = list_head_to_task_struct(first);
 		}
 		else {
-			list_del(&readyqueue);
-			list_add_tail(first, &readyqueue);
+			list_del(queue);
+			list_add_tail(first, queue);
 		}
 
-		while(first != list_first(&readyqueue)) {
-			struct list_head *act = list_first(&readyqueue);
+		while(first != list_first(queue)) {
+			struct list_head *act = list_first(queue);
 			if (list_head_to_task_struct(act)->PID == PID) {
 				found = 1;
 				*pointer_to_desired = list_head_to_task_struct(act);
 			}
-			list_del(&readyqueue);
-			list_add_tail(act, &readyqueue);
+			list_del(queue);
+			list_add_tail(act, queue);
 		}
 	}
 
@@ -196,7 +196,7 @@ void init_Sched_RR() {
 	sched_update_queues_state = sched_update_queues_state_RR;
 	rr_quantum = DEFAULT_RR_QUANTUM;
 
-	//Inicialitzacio estadistica
+	/* Inicialitzacio estadistica */
 	struct task_struct * current_task = current();
 	current_task->statistics.remaining_quantum = DEFAULT_RR_QUANTUM;
 	current_task->process_state = ST_READY;
@@ -205,7 +205,7 @@ void init_Sched_RR() {
 void sched_update_data_RR() {
 	--rr_quantum;
 
-	// Actualitzacio estadistica
+	/* Actualitzacio estadistica */
 	struct task_struct * current_task = current();
 	--current_task->statistics.remaining_quantum;
 	++current_task->statistics.tics;

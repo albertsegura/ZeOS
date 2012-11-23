@@ -139,11 +139,9 @@ void keyboard_routine() {
 				 * 		> Actualitzem el buffer i el keystoread a partir
 				 * 			del primer element bloquejat									*/
 				if (keystoread == circularbNumElements(&cbuffer)) {
-					while (keystoread > 0) {
+					while (!circularbIsEmpty(&cbuffer)) {
 						circularbRead(&cbuffer,&bread);
-						copy_to_user(&bread, keybuffer, 1);
-						++keybuffer;
-						--keystoread;
+						copy_to_user(&bread, keybuffer++, 1);
 					}
 					task_list = list_first(&keyboardqueue);
 					list_del(task_list);
@@ -156,8 +154,8 @@ void keyboard_routine() {
 						taskbloqued = list_head_to_task_struct(task_list);
 						unionbloqued = (union task_union*)taskbloqued;
 
-						keybuffer = (unsigned int)unionbloqued->stack[taskbloqued->kernel_esp+3];
-						keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+4]);
+						keybuffer = (unsigned int)unionbloqued->stack[taskbloqued->kernel_esp+2];
+						keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+3]);
 					}
 				}
 

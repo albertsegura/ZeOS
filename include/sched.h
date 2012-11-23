@@ -42,7 +42,6 @@ extern int lastPID;
 
 #define KERNEL_ESP       (DWord) &task[1].stack[KERNEL_STACK_SIZE]
 
-/* Inicialitza les dades del proces inicial */
 void init_task1(void);
 
 void init_freequeue (void);
@@ -61,7 +60,7 @@ void task_switch(union task_union *new);
 
 int getNewPID();
 
-int getStructPID(int PID, struct task_struct ** desired);
+int getStructPID(int PID, struct list_head * queue, struct task_struct ** pointer_to_desired);
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
@@ -98,5 +97,7 @@ int sched_change_needed_RR();
 void sched_switch_process_RR();
 
 void sched_update_queues_state_RR(struct list_head* ls, struct task_struct * task);
+
+
 
 #endif  /* __SCHED_H__ */
