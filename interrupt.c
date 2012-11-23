@@ -10,9 +10,14 @@
 #include <zeos_interrupt.h>
 #include <system.h>
 #include <sched.h>
+#include <mm_address.h>
+#include <utils.h>
+#include <cbuffer.h>
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
+
+
 
 char char_map[] =
 {
@@ -97,13 +102,16 @@ void clock_routine() {
 	zeos_show_clock();
 	sched_update_data();
 	if (sched_change_needed()) {
-		sched_update_queues_state(&readyqueue);
+		sched_update_queues_state(&readyqueue, current());
 		sched_switch_process();
 	}
 }
 
 void keyboard_routine() {
 
+	struct list_head *task_list;
+	struct task_struct *taskbloqued;
+	char bread;
 	unsigned char read = inb(0x60); // Lectura del Port
 	char keyPressed;
 	
@@ -113,9 +121,59 @@ void keyboard_routine() {
 		if (read < 98) {
 			keyPressed = char_map[read]; // Conversió de la lectura a char
 			if (keyPressed == '\0') keyPressed = 'C';
-			printc_xy(0,0,keyPressed);
 		}
-		else printc_xy(0,0,'C');
+		else keyPressed = 'C';
+
+		/* Si el Buffer Circular no està ple */
+		if (!circularbIsFull(&cbuffer)) {
+			circularbWrite(&cbuffer,&keyPressed);
+
+			/* Si hi ha algun element bloquejat actuem, sino només hem d'escriure */
+			if (!list_empty(&keyboardqueue)) {
+
+				/* Si tenim just el que es volia llegir:
+				 * 	- Proporcionem totes les dades del Cbuffer
+				 * 		al buffer del usuari
+				 * 	- Desbloquejem el procés bloquejat -> readyqueue
+				 * 	- Si hi han més procesos bloquejats:
+				 * 		> Actualitzem el buffer i el keystoread a partir
+				 * 			del primer element bloquejat									*/
+				if (keystoread == circularbNumElements(&cbuffer)) {
+					while (keystoread > 0) {
+						circularbRead(&cbuffer,&bread);
+						copy_to_user(&bread, keybuffer, 1);
+						++keybuffer;
+						--keystoread;
+					}
+					task_list = list_first(&keyboardqueue);
+					list_del(task_list);
+					taskbloqued = list_head_to_task_struct(task_list);
+					sched_update_queues_state(&readyqueue, taskbloqued);
+
+					if (!list_empty(&keyboardqueue)) {
+						union task_union *unionbloqued;
+						task_list = list_first(&keyboardqueue);
+						taskbloqued = list_head_to_task_struct(task_list);
+						unionbloqued = (union task_union*)taskbloqued;
+
+						keybuffer = (unsigned int)unionbloqued->stack[taskbloqued->kernel_esp+3];
+						keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+4]);
+					}
+				}
+
+				/* Si el CircularBuffer està ple:
+				 * 	- Proporcionem totes les dades del Cbuffer
+				 * 		al buffer del usuari
+				 * 	-	Actualitzem el keystoread amb el nou valor */
+				else if (circularbIsFull(&cbuffer)) {
+					while (!circularbIsEmpty(&cbuffer)) {
+								circularbRead(&cbuffer,&bread);
+								copy_to_user(&bread, keybuffer++, 1);
+					}
+					keystoread = keystoread - CBUFFER_SIZE;
+				}
+			}
+		}
 	}
 	else { // Break
 

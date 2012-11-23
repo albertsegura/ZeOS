@@ -20,6 +20,10 @@ unsigned int *p_usr_size = (unsigned int *) KERNEL_START+1;
 unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 
 int zeos_ticks;
+char cbuff[CBUFFER_SIZE];
+int keystoread;
+char * keybuffer;
+Circular_Buffer cbuffer;
 
 /************************/
 /** Auxiliar functions **/
@@ -88,6 +92,8 @@ int __attribute__((__section__(".text.main")))
 
   init_readyqueue();
 
+  init_keyboardqueue();
+
   /* Initialize Scheduling */
   init_sched();
 
@@ -105,6 +111,8 @@ int __attribute__((__section__(".text.main")))
   zeos_ticks = 0;
   lastPID = 1;
   
+  circularbInit(&cbuffer,cbuff, CBUFFER_SIZE);
+
   enable_int();
   /*
    * We return from a 'theorical' call to a 'call gate' to reduce our privileges

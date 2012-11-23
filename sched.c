@@ -27,6 +27,8 @@ struct list_head freequeue;
 
 struct list_head readyqueue;
 
+struct list_head keyboardqueue;
+
 struct task_struct * idle_task;
 
 unsigned int rr_quantum;
@@ -99,6 +101,11 @@ void init_freequeue (void) {
 void init_readyqueue (void) {
 	INIT_LIST_HEAD(&readyqueue);
 }
+
+void init_keyboardqueue (void) {
+	INIT_LIST_HEAD(&keyboardqueue);
+}
+
 
 void init_idle (void) {
 	struct list_head *idle_list_pointer = list_first(&freequeue);
@@ -228,10 +235,10 @@ void sched_switch_process_RR() {
 	}
 }
 
-void sched_update_queues_state_RR(struct list_head* ls) {
-	struct task_struct * current_task = current();
-	if (ls == &freequeue) current_task->process_state = ST_ZOMBIE;
-	else if (ls == &readyqueue) current_task->process_state = ST_READY;
+void sched_update_queues_state_RR(struct list_head* ls, struct task_struct * task) {
+	if (ls == &freequeue) task->process_state = ST_ZOMBIE;
+	else if (ls == &readyqueue) task->process_state = ST_READY;
+	else if (ls == &keyboardqueue) task->process_state = ST_BLOCKED;
 
-	list_add_tail(&current_task->list,ls);
+	list_add_tail(&task->list,ls);
 }

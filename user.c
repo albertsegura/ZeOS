@@ -138,20 +138,30 @@ main(void) {
 	int pid = 1;
 	clearScreen();
 
-	clone(cloneHello, &stack[1024]);
+
+	read(1,pidc,5);
+	write(1,pidc,5);
+
+
+
+
+
+	//clone(cloneHello, &stack[1024]);
 	//pid = fork();
 	//if (pid > 0) { // Pare
 			//write(1,"Soc el pare\n",12);
-			write(1,"Hola jo no vinc del clone\n",26);
+		//	write(1,"Hola jo no vinc del clone\n",26);
 	//}
 	/*else if(pid == 0) {
 		write(1,"Soc el fill\n",12);
 		write(1,"Hola jo no vinc del clone\n",26);
 	}*/
+	/*
 	while(1) {
 		if (pid > 0) write(1,"Father\n",7);
 		//else write(1,"Child\n",6);
 	}
+	*/
 
 	/*
 	if (-1 == write(1,"\n*****  ZEOS SO task1: Hola mon!  *****\n",40)) perror("Error d'escriptura");

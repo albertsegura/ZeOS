@@ -15,6 +15,8 @@
 // Primera pàgina lliure en un procés acabat de crear
 #define FIRST_FREE_PAG_P (NUM_PAG_KERNEL+NUM_PAG_CODE+NUM_PAG_DATA)
 
+#define CBUFFER_SIZE 1024
+
 /* Memory distribution */
 /***********************/
 

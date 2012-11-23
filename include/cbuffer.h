@@ -24,6 +24,12 @@ static inline int circularbIsFull(Circular_Buffer *cb) {
 	return (cb->end + 1)%cb->size == cb->start;
 }
 
+static inline int circularbNumElements(Circular_Buffer *cb) {
+	if (circularbIsFull(cb)) return cb->size;
+	else if (cb->start < cb->end) return ((cb->end)-(cb->start));
+	return cb->size-(cb->start-cb->end);
+}
+
 static inline int circularbIsEmpty(Circular_Buffer *cb) {
 	return cb->end == cb->start;
 }

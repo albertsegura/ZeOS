@@ -35,6 +35,7 @@ extern union task_union task[NR_TASKS]; /* Vector de tasques */
 extern struct task_struct *idle_task;
 extern struct list_head freequeue;
 extern struct list_head readyqueue;
+extern struct list_head keyboardqueue;
 extern struct task_struct * idle_task;
 extern unsigned int rr_quantum;
 extern int lastPID;
@@ -47,6 +48,8 @@ void init_task1(void);
 void init_freequeue (void);
 
 void init_readyqueue (void);
+
+void init_keyboardqueue (void);
 
 void init_idle(void);
 
@@ -83,7 +86,7 @@ int (* sched_change_needed)();
 void (* sched_switch_process)();
 
 /* Update queues and state of processes.*/
-void (* sched_update_queues_state)(struct list_head* ls);
+void (* sched_update_queues_state)(struct list_head* ls, struct task_struct * task);
 
 /* Inicialització de la politica de scheduler Round Robin */
 void init_Sched_RR();
@@ -94,6 +97,6 @@ int sched_change_needed_RR();
 
 void sched_switch_process_RR();
 
-void sched_update_queues_state_RR(struct list_head* ls);
+void sched_update_queues_state_RR(struct list_head* ls, struct task_struct * task);
 
 #endif  /* __SCHED_H__ */

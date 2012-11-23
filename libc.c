@@ -158,3 +158,24 @@ int clone (void (*function)(void), void *stack) {
 }
 
 
+/* Wrapper de la Syscall Read */
+int read (int fd, char *buffer, int size) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (fd),
+				"+c" (buffer),
+				"+d" (size)
+				:"a"  (5)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	else ret = size;
+	return ret;
+}
+
+
+

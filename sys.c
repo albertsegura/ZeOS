@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <system.h>
 #include <entry.h>
+#include <cbuffer.h>
 
 #define LECTURA 0
 #define ESCRIPTURA 1
@@ -55,8 +56,6 @@ int sys_clone (void (*function)(void), void *stack) {
 	int PID;
 	int current_ebp = 0;
 	unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
-	int pag;
-	int new_ph_pag;
 
 	/* Punt a: Obtenció d'una task_struct nova de la freequeue */
 	if (list_empty(&freequeue)) return -ENTASK;
@@ -82,10 +81,6 @@ int sys_clone (void (*function)(void), void *stack) {
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
-	/* Punt f i g */
-
-	/* Modificació del retorn del procés */
-	new_stack->stack[pos_ebp+8] = PID; // TODO es necesari?
 	/* Construint l'enllaç dinàmic fent que el esp apunti al ebp guardat */
 	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
 
@@ -95,7 +90,7 @@ int sys_clone (void (*function)(void), void *stack) {
 	/* Modificació del ebp amb la @ de la stack perque al RestoreAll*/
 	new_stack->stack[pos_ebp+7] = (unsigned int)stack;
 
-	// |	epi	|
+	// |	eip	|
 	// |	es	|
 	// |eflags|
 	// |	esp	|
@@ -114,8 +109,8 @@ int sys_clone (void (*function)(void), void *stack) {
 	new_stack->task.statistics.tics = 0;
 	new_stack->task.statistics.cs = 0;
 
-	/* Punt h */
-	list_add_tail(&new_pcb->list,&readyqueue);
+	/* El possem en la pila de ready per a la seva execució en un futur*/
+	sched_update_queues_state(&readyqueue,new_pcb);
 
 	return PID;
 }
@@ -232,7 +227,7 @@ int sys_fork()
 	new_stack->task.statistics.cs = 0;
 
 	/* Punt h */
-	list_add_tail(&new_pcb->list,&readyqueue);
+	sched_update_queues_state(&readyqueue,new_pcb);
 
 	return PID;
 }
@@ -252,7 +247,7 @@ void sys_exit() {
 	*(current_pcb->dir_count) -= 1;
 
 	/* Punt b */
-	sched_update_queues_state(&freequeue);
+	sched_update_queues_state(&freequeue,current());
 	sched_switch_process();
 }
 
@@ -277,6 +272,58 @@ int sys_write(int fd, char * buffer, int size) {
 
 	return 0;
 }
+
+int sys_read(int fd, char * buffer, int size) {
+	char read;
+	struct task_struct * current_task = current();
+	int ret = 0;
+
+	ret = check_fd(fd,ESCRIPTURA);
+	if (ret != 0) return ret;
+  if (buffer == NULL) return -EPNULL;
+	if (size <= 0) return -ESIZEB;
+	if (access_ok(VERIFY_WRITE, buffer, size) == 0) return -ENACCB;
+
+	/* Si hi han procesos bloquejats, es posa a la cua */
+	if (!list_empty(&keyboardqueue)) {
+		sched_update_queues_state(&keyboardqueue,current());
+		sched_switch_process();
+	}
+	else { /* Si no hi ha cap procés en la cua */
+
+		/* Si hi han dades suficients per proporcionar-li
+		 * al procés, es copien les dades					*/
+		if (size <= circularbNumElements(&cbuffer)) {
+			while (size > 0) {
+				circularbRead(&cbuffer,&read);
+				copy_to_user(&read, buffer, 1);
+				buffer += 1;
+				size -= 1;
+			}
+		}
+		else { /* Si no hi han dades suficients */
+			keystoread = size;
+
+			/* Si el buffer està ple es buida */
+			if (circularbIsFull(&cbuffer)) {
+				keystoread -= CBUFFER_SIZE;
+				while (!circularbIsEmpty(&cbuffer)) {
+					circularbRead(&cbuffer,&read);
+					copy_to_user(&read, buffer, 1);
+					buffer += 1;
+				}
+			}
+			keybuffer = buffer; // S'actualitza el buffer global
+
+			/* Es bloqueja i es canvia de procés*/
+			sched_update_queues_state(&keyboardqueue,current());
+			sched_switch_process();
+		}
+	}
+
+	return 0;
+}
+
 
 int sys_gettime() {
 	return zeos_ticks;
