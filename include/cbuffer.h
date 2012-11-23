@@ -2,7 +2,7 @@
 #define _CIRCULAR_BUFFER
 
 typedef struct {
-		int start, end, size;
+		int start, end, size, numelem;
 		char *buffer;
 }Circular_Buffer;
 
@@ -13,6 +13,7 @@ static inline void circularbInit(Circular_Buffer* cb, char *buf, int size) {
 	cb->start = 0;
 	cb->end = 0;
 	cb->size = size;
+	cb->numelem = 0;
 }
 
 static inline void circularbFree(Circular_Buffer *cb) {
@@ -25,9 +26,7 @@ static inline int circularbIsFull(Circular_Buffer *cb) {
 }
 
 static inline int circularbNumElements(Circular_Buffer *cb) {
-	if (circularbIsFull(cb)) return cb->size;
-	else if (cb->start < cb->end) return ((cb->end)-(cb->start));
-	return cb->size-(cb->start-cb->end);
+	return cb->numelem;
 }
 
 static inline int circularbIsEmpty(Circular_Buffer *cb) {
@@ -39,6 +38,7 @@ static inline int circularbWrite(Circular_Buffer *cb, char *element) {
 	else {
 		cb->buffer[cb->end] = *element;
 		cb->end = (cb->end + 1)%cb->size;
+		cb->numelem++;
 		return 0;
 	}
 }
@@ -46,6 +46,7 @@ static inline int circularbWrite(Circular_Buffer *cb, char *element) {
 static inline void circularbRead(Circular_Buffer *cb, char *element) {
 	*element = cb->buffer[cb->start];
 	cb->start = (cb->start + 1) % cb->size;
+	cb->numelem--;
 }
 
 #endif /* _CIRCULAR_BUFFER */
