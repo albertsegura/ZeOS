@@ -107,6 +107,21 @@ void clock_routine() {
 	}
 }
 
+void keyboard_cbuffer_read() {
+	// TODO Gestionar afegir la pagina del procés bloquejat per modificar correctament:
+	//
+	//			Afegir pagina corresponent al keybuffer del blocked en el procés actual
+	//			buscant una entrada lliure, calcular l'adreça que té la variable del bucle
+	//			escriure, bucle fins o buidar el cbuffer o haver de canviar de pagina:
+	//			- si haver de canviar eliminar antiga, afegir nova
+	while (!circularbIsEmpty(&cbuffer)) {
+
+		circularbRead(&cbuffer,&bread);
+		copy_to_user(&bread, keybuffer++, 1);
+	}
+
+}
+
 void keyboard_routine() {
 
 	struct list_head *task_list;
@@ -139,10 +154,11 @@ void keyboard_routine() {
 				 * 		> Actualitzem el buffer i el keystoread a partir
 				 * 			del primer element bloquejat									*/
 				if (keystoread == circularbNumElements(&cbuffer)) {
-					while (!circularbIsEmpty(&cbuffer)) {
-						circularbRead(&cbuffer,&bread);
-						copy_to_user(&bread, keybuffer++, 1);
-					}
+
+
+					keyboard_cbuffer_read();
+
+
 					task_list = list_first(&keyboardqueue);
 					list_del(task_list);
 					taskbloqued = list_head_to_task_struct(task_list);
@@ -164,10 +180,11 @@ void keyboard_routine() {
 				 * 		al buffer del usuari
 				 * 	-	Actualitzem el keystoread amb el nou valor */
 				else if (circularbIsFull(&cbuffer)) {
-					while (!circularbIsEmpty(&cbuffer)) {
-								circularbRead(&cbuffer,&bread);
-								copy_to_user(&bread, keybuffer++, 1);
-					}
+
+
+					keyboard_cbuffer_read();
+
+
 					keystoread = keystoread - CBUFFER_SIZE;
 				}
 			}

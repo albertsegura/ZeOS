@@ -139,7 +139,7 @@ main(void) {
 	clearScreen();
 
 
-	read(1,pidc,5);
+	read(0,pidc,5);
 	write(1,pidc,5);
 
 

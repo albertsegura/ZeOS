@@ -22,8 +22,9 @@
 
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -EBADF; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -EACCES; /*EACCES*/
+  if (fd != 1 && fd != 0) return -EBADF;
+  if (fd == 1 && permissions!=ESCRIPTURA) return -EACCES;
+  if (fd == 0 && permissions!=LECTURA) return -EACCES;
   return 0;
 }
 
@@ -277,7 +278,7 @@ int sys_read(int fd, char * buffer, int size) {
 	char read;
 	int ret = 0;
 
-	ret = check_fd(fd,ESCRIPTURA);
+	ret = check_fd(fd,LECTURA);
 	if (ret != 0) return ret;
   if (buffer == NULL) return -EPNULL;
 	if (size <= 0) return -ESIZEB;
