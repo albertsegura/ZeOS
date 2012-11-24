@@ -13,6 +13,7 @@
 #include <mm_address.h>
 #include <utils.h>
 #include <cbuffer.h>
+#include <mm.h>
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
@@ -107,85 +108,108 @@ void clock_routine() {
 	}
 }
 
-void keyboard_cbuffer_read() {
-	// TODO Gestionar afegir la pagina del procés bloquejat per modificar correctament:
-	//
-	//			Afegir pagina corresponent al keybuffer del blocked en el procés actual
-	//			buscant una entrada lliure, calcular l'adreça que té la variable del bucle
-	//			escriure, bucle fins o buidar el cbuffer o haver de canviar de pagina:
-	//			- si haver de canviar eliminar antiga, afegir nova
-	while (!circularbIsEmpty(&cbuffer)) {
+/*	Gestiona la copia del cbuffer i els problemes ocasionats al ser un
+ * 	procés diferent del bloquejat el que ha d'accedir al espai d'@ del
+ * 	procés bloquejat.
+ *	Llegeix min(keystoread,size del cbuffer) elements.
+ * 		-	Retorna 1:
+ * 					Si ha pogut realitzar la copia.
+ * 		-	Retorna 0:
+ * 					Si no ha pogut realitzar la copia per falta de pagines
+ * 					lliures en el procés per poder accedir al espai d'@ del
+ * 					procés bloquejat.
+ * 	*/
+int keyboard_cbuffer_read() {
+	struct list_head *list_blocked = list_first(&keyboardqueue);
+	struct task_struct * blocked_pcb = list_head_to_task_struct(list_blocked);
+	struct task_struct * current_pcb = current();
+	page_table_entry * pt_blocked = get_PT(blocked_pcb);
+	page_table_entry * pt_current = get_PT(current_pcb);
+	page_table_entry * dir_blocked = get_DIR(blocked_pcb);
+	page_table_entry * dir_current = get_DIR(current_pcb);
+	char bread;
 
-		circularbRead(&cbuffer,&bread);
-		copy_to_user(&bread, keybuffer++, 1);
+	if (dir_blocked != dir_current) { // Si són 2 procesos independents
+		int id_pag_buffer = ((int)keybuffer&0x005ff000)>>12;
+		int	addr_buffer = ((int)keybuffer&0x00000FFF);
+
+		int free_pag = FIRST_FREE_PAG_P;
+		while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
+		if (free_pag == TOTAL_PAGES) return 0;
+
+		set_ss_pag(pt_current,free_pag, pt_blocked[id_pag_buffer].bits.pbase_addr);
+
+		while (!circularbIsEmpty(&cbuffer) && keystoread > 0) {
+			circularbRead(&cbuffer,&bread);
+			copy_to_user(&bread, (void *)((free_pag<<12)+addr_buffer), 1);
+			keystoread--;
+			keybuffer++;
+			addr_buffer++;
+			if (addr_buffer == PAGE_SIZE) {
+				id_pag_buffer++;
+				set_ss_pag(pt_current,free_pag, pt_blocked[id_pag_buffer].bits.pbase_addr);
+				set_cr3(dir_current);
+			}
+		}
+		del_ss_pag(pt_current, free_pag);
+	}
+	else { // Si els 2 procesos són threads amb mem.compartida
+		while (!circularbIsEmpty(&cbuffer) && keystoread > 0) {
+			circularbRead(&cbuffer,&bread);
+			copy_to_user(&bread, keybuffer++, 1);
+			keystoread--;
+		}
 	}
 
+	return 1;
 }
 
 void keyboard_routine() {
-
-	struct list_head *task_list;
-	struct task_struct *taskbloqued;
-	char bread;
 	unsigned char read = inb(0x60); // Lectura del Port
 	char keyPressed;
 	
 	/* Primer bit indica Make(0)/Break(1) => key (Pressed/Relased)*/
-	if (read < 0x80){ // Make
-		
-		if (read < 98) {
-			keyPressed = char_map[read]; // Conversió de la lectura a char
-			if (keyPressed == '\0') keyPressed = 'C';
-		}
+	if (read < 0x80) { // Make
+		if (read < 98) keyPressed = char_map[read] == '\0' ? 'C' : char_map[read];
 		else keyPressed = 'C';
 
 		/* Si el Buffer Circular no està ple */
 		if (!circularbIsFull(&cbuffer)) {
 			circularbWrite(&cbuffer,&keyPressed);
+		}
 
-			/* Si hi ha algun element bloquejat actuem, sino només hem d'escriure */
-			if (!list_empty(&keyboardqueue)) {
+		/* Com que el buffer es pot emplenar i no sempre podem garantir que es
+		 * podrà buidar, sempre s'ha de comprovar si podem actuar.
+		 * Rao: Abans si el buffer estava ple era perque no hi havia cap
+		 * 			proces que volgues llegir, ara no es així.  */
+		if (!list_empty(&keyboardqueue)) {
+			int ret = 0;
 
-				/* Si tenim just el que es volia llegir:
-				 * 	- Proporcionem totes les dades del Cbuffer
-				 * 		al buffer del usuari
-				 * 	- Desbloquejem el procés bloquejat -> readyqueue
-				 * 	- Si hi han més procesos bloquejats:
-				 * 		> Actualitzem el buffer i el keystoread a partir
-				 * 			del primer element bloquejat									*/
-				if (keystoread == circularbNumElements(&cbuffer)) {
+			/*	Si es compleix la condició hem d'intentar llegir el buffer */
+			if (keystoread <= circularbNumElements(&cbuffer) || circularbIsFull(&cbuffer)) {
+				 ret = keyboard_cbuffer_read();
+			}
 
+			/* Si hem pogut llegir del buffer i no queda res més per llegir:
+			 * 	-	Posem el procés en la readyqueue.
+			 * 	-	Actualitzem el buffer i el keystoread a partir del primer
+			 * 		element bloquejat, si n'hi han més.											*/
+			if (keystoread == 0 && ret) {
 
-					keyboard_cbuffer_read();
+				struct list_head * task_list = list_first(&keyboardqueue);
+				list_del(task_list);
+				struct task_struct * taskbloqued = list_head_to_task_struct(task_list);
+				sched_update_queues_state(&readyqueue, taskbloqued);
 
-
+				if (!list_empty(&keyboardqueue)) {
+					union task_union *unionbloqued;
 					task_list = list_first(&keyboardqueue);
-					list_del(task_list);
 					taskbloqued = list_head_to_task_struct(task_list);
-					sched_update_queues_state(&readyqueue, taskbloqued);
+					unionbloqued = (union task_union*)taskbloqued;
 
-					if (!list_empty(&keyboardqueue)) {
-						union task_union *unionbloqued;
-						task_list = list_first(&keyboardqueue);
-						taskbloqued = list_head_to_task_struct(task_list);
-						unionbloqued = (union task_union*)taskbloqued;
-
-						keybuffer = (unsigned int)unionbloqued->stack[taskbloqued->kernel_esp+2];
-						keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+3]);
-					}
-				}
-
-				/* Si el CircularBuffer està ple:
-				 * 	- Proporcionem totes les dades del Cbuffer
-				 * 		al buffer del usuari
-				 * 	-	Actualitzem el keystoread amb el nou valor */
-				else if (circularbIsFull(&cbuffer)) {
-
-
-					keyboard_cbuffer_read();
-
-
-					keystoread = keystoread - CBUFFER_SIZE;
+					/* Parametres d'on esta bloquejada la rutina : sys_read_keyboard */
+					keybuffer = (void *)unionbloqued->stack[taskbloqued->kernel_esp+2];
+					keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+3]);
 				}
 			}
 		}

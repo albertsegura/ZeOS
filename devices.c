@@ -1,8 +1,10 @@
 #include <io.h>
 #include <utils.h>
 #include <list.h>
-#include <cbuffer.h>
 #include <mm_address.h>
+#include <system.h>
+#include <sched.h>
+#include <cbuffer.h>
 
 // Blocked queue for this device
 LIST_HEAD(blocked);
@@ -25,7 +27,7 @@ int sys_read_keyboard(char *buffer, int size) {
 		sched_update_queues_state(&keyboardqueue,current());
 		sched_switch_process();
 	}
-	else { /* Si no hi ha cap procés en la cua */
+	else {
 
 		/* Si hi han dades suficients per proporcionar-li
 		 * al procés, es copien les dades					*/
