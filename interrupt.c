@@ -130,8 +130,8 @@ int keyboard_cbuffer_read() {
 	char bread;
 
 	if (dir_blocked != dir_current) { // Si són 2 procesos independents
-		int id_pag_buffer = ((int)keybuffer&0x005ff000)>>12;
-		int	addr_buffer = ((int)keybuffer&0x00000FFF);
+		int id_pag_buffer = ((int)blocked_pcb->kbinfo.keybuffer&0x003ff000)>>12;
+		int	addr_buffer = ((int)blocked_pcb->kbinfo.keybuffer&0x00000FFF);
 
 		int free_pag = FIRST_FREE_PAG_P;
 		while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
@@ -139,11 +139,11 @@ int keyboard_cbuffer_read() {
 
 		set_ss_pag(pt_current,free_pag, pt_blocked[id_pag_buffer].bits.pbase_addr);
 
-		while (!circularbIsEmpty(&cbuffer) && keystoread > 0) {
+		while (!circularbIsEmpty(&cbuffer) && blocked_pcb->kbinfo.keystoread > 0) {
 			circularbRead(&cbuffer,&bread);
 			copy_to_user(&bread, (void *)((free_pag<<12)+addr_buffer), 1);
-			keystoread--;
-			keybuffer++;
+			blocked_pcb->kbinfo.keystoread--;
+			blocked_pcb->kbinfo.keybuffer++;
 			addr_buffer++;
 			if (addr_buffer == PAGE_SIZE) {
 				id_pag_buffer++;
@@ -154,10 +154,10 @@ int keyboard_cbuffer_read() {
 		del_ss_pag(pt_current, free_pag);
 	}
 	else { // Si els 2 procesos són threads amb mem.compartida
-		while (!circularbIsEmpty(&cbuffer) && keystoread > 0) {
+		while (!circularbIsEmpty(&cbuffer) && blocked_pcb->kbinfo.keystoread > 0) {
 			circularbRead(&cbuffer,&bread);
-			copy_to_user(&bread, keybuffer++, 1);
-			keystoread--;
+			copy_to_user(&bread, blocked_pcb->kbinfo.keybuffer++, 1);
+			blocked_pcb->kbinfo.keystoread--;
 		}
 	}
 
@@ -183,34 +183,20 @@ void keyboard_routine() {
 		 * Rao: Abans si el buffer estava ple era perque no hi havia cap
 		 * 			proces que volgues llegir, ara no es així.  */
 		if (!list_empty(&keyboardqueue)) {
-			int ret = 0;
+			struct list_head * task_list = list_first(&keyboardqueue);
+			struct task_struct * taskbloqued = list_head_to_task_struct(task_list);
 
+			int ret = 0;
 			/*	Si es compleix la condició hem d'intentar llegir el buffer */
-			if (keystoread <= circularbNumElements(&cbuffer) || circularbIsFull(&cbuffer)) {
+			if (taskbloqued->kbinfo.keystoread <= circularbNumElements(&cbuffer) || circularbIsFull(&cbuffer)) {
 				 ret = keyboard_cbuffer_read();
 			}
 
 			/* Si hem pogut llegir del buffer i no queda res més per llegir:
-			 * 	-	Posem el procés en la readyqueue.
-			 * 	-	Actualitzem el buffer i el keystoread a partir del primer
-			 * 		element bloquejat, si n'hi han més.											*/
-			if (keystoread == 0 && ret) {
-
-				struct list_head * task_list = list_first(&keyboardqueue);
+			 * 	-	Posem el procés en la readyqueue, i l'eliminem de la keyboardqueue	*/
+			if (taskbloqued->kbinfo.keystoread == 0 && ret) {
 				list_del(task_list);
-				struct task_struct * taskbloqued = list_head_to_task_struct(task_list);
 				sched_update_queues_state(&readyqueue, taskbloqued);
-
-				if (!list_empty(&keyboardqueue)) {
-					union task_union *unionbloqued;
-					task_list = list_first(&keyboardqueue);
-					taskbloqued = list_head_to_task_struct(task_list);
-					unionbloqued = (union task_union*)taskbloqued;
-
-					/* Parametres d'on esta bloquejada la rutina : sys_read_keyboard */
-					keybuffer = (void *)unionbloqued->stack[taskbloqued->kernel_esp+2];
-					keystoread = (char)(unionbloqued->stack[taskbloqued->kernel_esp+3]);
-				}
 			}
 		}
 	}

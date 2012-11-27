@@ -12,8 +12,6 @@
 extern TSS         tss;
 extern Descriptor* gdt;
 extern int 	zeos_ticks;
-extern int keystoread;
-extern char * keybuffer;
 extern Circular_Buffer cbuffer;
 
 #endif  /* __SYSTEM_H__ */

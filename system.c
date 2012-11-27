@@ -21,8 +21,6 @@ unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 
 int zeos_ticks;
 char cbuff[CBUFFER_SIZE];
-int keystoread;
-char * keybuffer;
 Circular_Buffer cbuffer;
 
 /************************/

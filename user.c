@@ -121,8 +121,57 @@ void fork_test2() {
 }
 
 void cloneHello() {
-	write(1,"Hola vinc del clone\n",20);
-	while(1) write(1,"Clone\n",6);
+	char pidc[11];
+	pid = getpid();
+	write(1,"Surto del clone!\n",17);
+	read(0,pidc,5);
+	write(1,pidc,5);
+	while(1);
+}
+
+
+void exempleClone() {
+	char stack[4][1024];
+	clone(cloneHello, &stack[0][1024]);
+	clone(cloneHello, &stack[1][1024]);
+	clone(cloneHello, &stack[2][1024]);
+	clone(cloneHello, &stack[3][1024]);
+	write(1,"Pare del clone!\n",16);
+	while(1);
+}
+
+void exempleFork() {
+	char pidc[11];
+	pid = fork();
+	if (pid > 0) { // Pare
+		write(1,"Soc el pare\n",12);
+	}
+	else if(pid == 0) {
+			write(1,"Soc el fill\n",12);
+			read(0,pidc,5);
+			write(1,pidc,5);
+	}
+
+	while(1);
+}
+
+void exempleFC() {
+	char stack[1024];
+	char pidc[11];
+	pid = fork();
+	if (pid > 0) { // Pare
+		write(1,"Soc el pare\n",12);
+		clone(cloneHello, &stack[1024]);
+		read(0,pidc,5);
+		write(1,pidc,5);
+	}
+	else if(pid == 0) {
+			write(1,"Soc el fill\n",12);
+			read(0,pidc,5);
+			write(1,pidc,5);
+	}
+
+	while(1);
 }
 
 int __attribute__ ((__section__(".text.main")))
@@ -131,17 +180,16 @@ main(void) {
     /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
 	int time = 0;
-	char stack[1024];
 	char timec[11];
 	char pidc[11];
 
-	int pid = 1;
 	clearScreen();
+	//exempleClone();
+	exempleFC();
 
-
-	read(0,pidc,5);
+	/*read(0,pidc,5);
 	write(1,pidc,5);
-
+*/
 
 
 

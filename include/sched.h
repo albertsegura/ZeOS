@@ -16,6 +16,12 @@
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED, ST_ZOMBIE };
 
+struct keyboard_info {
+		char * keybuffer;
+		int keystoread;
+		int keysread;
+};
+
 struct task_struct {
   int PID;			/* Process ID */
   page_table_entry * dir_pages_baseAddr;
@@ -24,6 +30,7 @@ struct task_struct {
   struct stats statistics;
   enum state_t process_state;
   Byte *dir_count; /* Punter al contador de referencies al directori propi. */
+  struct keyboard_info kbinfo;
 };
 
 union task_union {

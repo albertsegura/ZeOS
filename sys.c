@@ -103,14 +103,12 @@ int sys_clone (void (*function)(void), void *stack) {
 	 * en la 1ra posició de la stack: push   %ebp 	*/
 	new_stack->stack[pos_ebp+16] = (unsigned int)stack+4;
 
-
-
 	/* Inicialització estadistica */
 	new_stack->task.process_state = ST_READY;
 	new_stack->task.statistics.tics = 0;
 	new_stack->task.statistics.cs = 0;
 
-	/* El possem en la pila de ready per a la seva execució en un futur*/
+	/* El posem en la pila de ready per a la seva execució en un futur*/
 	sched_update_queues_state(&readyqueue,new_pcb);
 
 	return PID;
@@ -171,6 +169,7 @@ int sys_fork()
 	for (pag=0;pag<NUM_PAG_DATA;pag++){
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,frames[pag]);
 	}
+
 
 	/* Punt d.ii */
 	/* Gestió extra per evitar problemes amb Memoria dinàmica:
@@ -239,10 +238,10 @@ void sys_exit() {
 	struct task_struct * current_pcb = current();
 	page_table_entry * pt_current = get_PT(current_pcb);
 
-	// Allibera només 20 page de Data del procés, canviar en Mem.dinamica
+	/* Allibera les 20 de Data i la resta, a partir de l'entrada 256+8 */
 	if (*(current_pcb->dir_count) == 1) {
-		for (pag=0;pag<NUM_PAG_DATA;pag++){
-			free_frame(pt_current[PAG_LOG_INIT_DATA_P0+pag].bits.pbase_addr);
+		for (pag=PAG_LOG_INIT_DATA_P0;pag<TOTAL_PAGES ;pag++){
+			free_frame(pt_current[pag].bits.pbase_addr);
 		}
 	}
 	*(current_pcb->dir_count) -= 1;
@@ -286,7 +285,7 @@ int sys_read(int fd, char * buffer, int size) {
 
 	ret = sys_read_keyboard(buffer,size);
 
-	return 0;
+	return ret;
 }
 
 
