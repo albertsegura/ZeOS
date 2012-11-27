@@ -56,9 +56,9 @@ int sys_DEBUG_tswitch() {
 int sys_clone (void (*function)(void), void *stack) {
 	int PID;
 	int current_ebp = 0;
-	unsigned int pos_ebp = 0; // posició del ebp en la stack: new/current_stack->stack[pos_ebp]
+	unsigned int pos_ebp = 0; /* posició del ebp en la stack: new/current_stack->stack[pos_ebp] */
 
-	/* Punt a: Obtenció d'una task_struct nova de la freequeue */
+	/* Obtenció d'una task_struct nova de la freequeue */
 	if (list_empty(&freequeue)) return -ENTASK;
 	struct list_head *new_list_pointer = list_first(&freequeue);
 	list_del(new_list_pointer);
@@ -74,21 +74,18 @@ int sys_clone (void (*function)(void), void *stack) {
 	pos_ebp = ((unsigned int)current_ebp-(unsigned int)current_pcb)/4;
 
 
-	/* Punt c: Copia del Stack, i restauració del directori del fill*/
+	/* Copia del Stack, actualització del contador de punters del directori*/
 	copy_data(current_pcb, new_pcb, 4096);
 	*(new_pcb->dir_count) += 1;
 
-	/* Punt e */
 	PID = getNewPID();
 	new_pcb->PID = PID;
 
 	/* Construint l'enllaç dinàmic fent que el esp apunti al ebp guardat */
 	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
-
-	/* Retorn normal: Restore ALL + iret */
-	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
-
-	/* Modificació del ebp amb la @ de la stack perque al RestoreAll*/
+	/* @ retorn estàndard: Restore ALL + iret */
+	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork; // TODO Comentar
+	/* Modificació del ebp amb la @ de la stack */
 	new_stack->stack[pos_ebp+7] = (unsigned int)stack;
 
 	// |	eip	|
@@ -97,10 +94,10 @@ int sys_clone (void (*function)(void), void *stack) {
 	// |	esp	|
 	// |	ss	|
 
-	/* Modificació del registre eip que restaurarà el iret*/
+	/* Modificació del registre eip que restaurarà el iret */
 	new_stack->stack[pos_ebp+13] = (unsigned int)function;
-	/* stack+4 perque el proces el primer que farà serà escriure
-	 * en la 1ra posició de la stack: push   %ebp 	*/
+	/* stack+4 perque el proces, el primer que farà serà escriure
+	 * en la 1ra posició de la stack, per tant: push   %ebp 	*/
 	new_stack->stack[pos_ebp+16] = (unsigned int)stack+4;
 
 	/* Inicialització estadistica */
@@ -108,7 +105,7 @@ int sys_clone (void (*function)(void), void *stack) {
 	new_stack->task.statistics.tics = 0;
 	new_stack->task.statistics.cs = 0;
 
-	/* El posem en la pila de ready per a la seva execució en un futur*/
+	/* El posem en la pila de ready per a la seva execució en un futur */
 	sched_update_queues_state(&readyqueue,new_pcb);
 
 	return PID;
