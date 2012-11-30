@@ -231,7 +231,15 @@ void sched_switch_process_RR() {
 	if (task != current()) {
 		++task->statistics.cs;
 		task->process_state = ST_RUN;
+		__asm__ __volatile__(
+	  		"pushl %edi \n"
+	  		"pushl %esi"
+			  );
 		task_switch((union task_union*)task);
+		__asm__ __volatile__(
+	  		"popl %esi \n"
+	  		"popl %edi"
+				  );
 	}
 }
 

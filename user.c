@@ -124,8 +124,13 @@ void cloneHello() {
 	char pidc[11];
 	pid = getpid();
 	write(1,"Surto del clone!\n",17);
-	read(0,pidc,5);
+	int ret = read(0,pidc,5);
+	write(1,"Lectura: ",9);
 	write(1,pidc,5);
+	itoa(ret,pidc);
+	write(1," Size: ",7);
+	write(1,pidc,strlen(pidc));
+	write(1,"\n",1);
 	while(1);
 }
 
@@ -179,13 +184,13 @@ main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
     /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
-	int time = 0;
+	/*int time = 0;
 	char timec[11];
-	char pidc[11];
+	char pidc[11];*/
 
 	clearScreen();
-	//exempleClone();
-	exempleFC();
+	exempleClone();
+	//exempleFC();
 
 	/*read(0,pidc,5);
 	write(1,pidc,5);

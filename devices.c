@@ -45,21 +45,23 @@ int sys_read_keyboard(char *buffer, int size) {
 		}
 		else { /* Si no hi han dades suficients */
 			current_pcb->kbinfo.keystoread = size;
-
+			current_pcb->kbinfo.keysread = 0;
 			/* Si el buffer està ple es buida */
 			if (circularbIsFull(&cbuffer)) {
 				current_pcb->kbinfo.keystoread -= CBUFFER_SIZE;
+				current_pcb->kbinfo.keysread = CBUFFER_SIZE;
 				while (!circularbIsEmpty(&cbuffer)) {
 					circularbRead(&cbuffer,&read);
 					copy_to_user(&read, buffer++, 1);
 				}
 			}
 			current_pcb->kbinfo.keybuffer = buffer;
-			current_pcb->kbinfo.keysread = 0;
 
 			/* Es bloqueja i es canvia de procés*/
+
 			sched_update_queues_state(&keyboardqueue,current_pcb);
 			sched_switch_process();
+
 		}
 	}
 

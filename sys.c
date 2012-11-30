@@ -84,7 +84,7 @@ int sys_clone (void (*function)(void), void *stack) {
 	/* Construint l'enllaç dinàmic fent que el esp apunti al ebp guardat */
 	new_stack->task.kernel_esp = (unsigned int)&new_stack->stack[pos_ebp];
 	/* @ retorn estàndard: Restore ALL + iret */
-	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork; // TODO Comentar
+	new_stack->stack[pos_ebp+1] = (unsigned int)&ret_from_fork;
 	/* Modificació del ebp amb la @ de la stack */
 	new_stack->stack[pos_ebp+7] = (unsigned int)stack;
 
@@ -96,9 +96,8 @@ int sys_clone (void (*function)(void), void *stack) {
 
 	/* Modificació del registre eip que restaurarà el iret */
 	new_stack->stack[pos_ebp+13] = (unsigned int)function;
-	/* stack+4 perque el proces, el primer que farà serà escriure
-	 * en la 1ra posició de la stack, per tant: push   %ebp 	*/
-	new_stack->stack[pos_ebp+16] = (unsigned int)stack+4;
+	/* Modificació del registre esp per fer a la @stack: push   %ebp 	*/
+	new_stack->stack[pos_ebp+16] = (unsigned int)stack;
 
 	/* Inicialització estadistica */
 	new_stack->task.process_state = ST_READY;

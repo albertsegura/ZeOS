@@ -133,9 +133,10 @@ int keyboard_cbuffer_read() {
 		int id_pag_buffer = ((int)blocked_pcb->kbinfo.keybuffer&0x003ff000)>>12;
 		int	addr_buffer = ((int)blocked_pcb->kbinfo.keybuffer&0x00000FFF);
 
+		/*Cerca de entradeslliures a la taula de pàgines */
 		int free_pag = FIRST_FREE_PAG_P;
 		while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
-		if (free_pag == TOTAL_PAGES) return 0;
+		if (free_pag == TOTAL_PAGES) return 0; // Cas d'error
 
 		set_ss_pag(pt_current,free_pag, pt_blocked[id_pag_buffer].bits.pbase_addr);
 
@@ -143,8 +144,10 @@ int keyboard_cbuffer_read() {
 			circularbRead(&cbuffer,&bread);
 			copy_to_user(&bread, (void *)((free_pag<<12)+addr_buffer), 1);
 			blocked_pcb->kbinfo.keystoread--;
+			blocked_pcb->kbinfo.keysread++;
 			blocked_pcb->kbinfo.keybuffer++;
 			addr_buffer++;
+			/* Si s'ha de canviar la pàgina */
 			if (addr_buffer == PAGE_SIZE) {
 				id_pag_buffer++;
 				set_ss_pag(pt_current,free_pag, pt_blocked[id_pag_buffer].bits.pbase_addr);
@@ -158,6 +161,7 @@ int keyboard_cbuffer_read() {
 			circularbRead(&cbuffer,&bread);
 			copy_to_user(&bread, blocked_pcb->kbinfo.keybuffer++, 1);
 			blocked_pcb->kbinfo.keystoread--;
+			blocked_pcb->kbinfo.keysread++;
 		}
 	}
 
@@ -179,9 +183,7 @@ void keyboard_routine() {
 		}
 
 		/* Com que el buffer es pot emplenar i no sempre podem garantir que es
-		 * podrà buidar, sempre s'ha de comprovar si podem actuar.
-		 * Rao: Abans si el buffer estava ple era perque no hi havia cap
-		 * 			proces que volgues llegir, ara no es així.  */
+		 * podrà buidar, sempre s'ha de comprovar si podem actuar.	  */
 		if (!list_empty(&keyboardqueue)) {
 			struct list_head * task_list = list_first(&keyboardqueue);
 			struct task_struct * taskbloqued = list_head_to_task_struct(task_list);
