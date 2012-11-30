@@ -175,5 +175,81 @@ int read (int fd, char *buffer, int size) {
 	return ret;
 }
 
+/* Wrapper de la Syscall Sem_init */
+int sem_init (int n_sem, unsigned int value) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (n_sem),
+				"+c" (value)
+				:"a"  (21)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	return ret;
+}
 
+/* Wrapper de la Syscall Sem_wait */
+int sem_wait (int n_sem) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (n_sem)
+				:"a"  (22)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	return ret;
+}
+
+/* Wrapper de la Syscall sem_signal */
+int sem_signal (int n_sem) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (n_sem)
+				:"a"  (23)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	return ret;
+}
+
+/* Wrapper de la Syscall sem_destroy */
+int sem_destroy (int n_sem) {
+	int ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (n_sem)
+				:"a"  (24)
+	);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+	}
+	return ret;
+}
+
+/* Wrapper de la Syscall sbrk */
+void *sbrk (int increment) {
+	void *ret;
+	__asm__ volatile(
+				"int $0x80"
+				:"=a" (ret), 		// resultat de %eax a ret
+				"+b" (increment)
+				:"a"  (25)
+	);
+	// TODO Comprovar que el ret es passi bé etc: void *
+	return ret;
+}
 

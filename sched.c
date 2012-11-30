@@ -5,7 +5,8 @@
 #include <sched.h>
 #include <mm.h>
 #include <io.h>
-
+#include <sem.h>
+#include <system.h>
 
 
 union task_union task[NR_TASKS]
@@ -106,6 +107,14 @@ void init_keyboardqueue (void) {
 	INIT_LIST_HEAD(&keyboardqueue);
 }
 
+void init_semarray(void) {
+	int i;
+	for(i=0;i<SEM_SIZE;++i)	{
+		sem_array[i].id = i;
+		sem_array[i].pid_owner = -1;
+		sem_array[i].value = 0;
+	}
+}
 
 void init_idle (void) {
 	struct list_head *idle_list_pointer = list_first(&freequeue);
@@ -231,6 +240,7 @@ void sched_switch_process_RR() {
 	if (task != current()) {
 		++task->statistics.cs;
 		task->process_state = ST_RUN;
+		current()->process_state = ST_READY;
 		__asm__ __volatile__(
 	  		"pushl %edi \n"
 	  		"pushl %esi"
@@ -247,6 +257,7 @@ void sched_update_queues_state_RR(struct list_head* ls, struct task_struct * tas
 	if (ls == &freequeue) task->process_state = ST_ZOMBIE;
 	else if (ls == &readyqueue) task->process_state = ST_READY;
 	else if (ls == &keyboardqueue) task->process_state = ST_BLOCKED;
+	else task->process_state = ST_BLOCKED;
 
 	list_add_tail(&task->list,ls);
 }

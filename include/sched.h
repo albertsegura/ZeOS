@@ -31,6 +31,7 @@ struct task_struct {
   enum state_t process_state;
   Byte *dir_count; /* Punter al contador de referencies al directori propi. */
   struct keyboard_info kbinfo;
+  unsigned int program_break;
 };
 
 union task_union {
@@ -60,6 +61,8 @@ void init_keyboardqueue (void);
 void init_idle(void);
 
 void init_sched(void);
+
+void init_semarray(void);
 
 struct task_struct * current();
 

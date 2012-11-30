@@ -11,6 +11,7 @@
 #include <mm.h>
 #include <io.h>
 #include <utils.h>
+#include <sem.h>
 //#include <zeos_mm.h> /* TO BE DELETED WHEN ADDED THE PROCESS MANAGEMENT CODE TO BECOME MULTIPROCESS */
 
 
@@ -22,6 +23,7 @@ unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 int zeos_ticks;
 char cbuff[CBUFFER_SIZE];
 Circular_Buffer cbuffer;
+Sem sem_array[SEM_SIZE];
 
 /************************/
 /** Auxiliar functions **/
@@ -91,6 +93,8 @@ int __attribute__((__section__(".text.main")))
   init_readyqueue();
 
   init_keyboardqueue();
+
+  init_semarray();
 
   /* Initialize Scheduling */
   init_sched();

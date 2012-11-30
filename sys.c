@@ -270,7 +270,6 @@ int sys_write(int fd, char * buffer, int size) {
 }
 
 int sys_read(int fd, char * buffer, int size) {
-	char read;
 	int ret = 0;
 
 	ret = check_fd(fd,LECTURA);
@@ -300,6 +299,113 @@ int sys_get_stats(int pid, struct stats *st) {
 
 	else return -ENSPID;
 	return 0;
+}
+
+
+/* SEMAPHORES */
+int sys_sem_init(int n_sem, unsigned int value) {
+	int ret = 0;
+
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	sem_array[n_sem].pid_owner = current()->PID;
+	sem_array[n_sem].value = value;
+	INIT_LIST_HEAD(&sem_array[n_sem].semqueue);
+
+	return ret;
+}
+
+int sys_sem_wait(int n_sem) {
+	int ret = 0;
+
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	if (sem_array[n_sem].value <= 0) {
+		sched_update_queues_state(&sem_array[n_sem].semqueue,current());
+		sched_switch_process();
+	}
+	else sem_array[n_sem].value--;
+
+	if (sem_array[n_sem].pid_owner == -1) ret = -1; // TODO errno SEM destroyed
+
+	return ret;
+}
+
+int sys_sem_signal(int n_sem) {
+	int ret = 0;
+
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	if(list_empty(&sem_array[n_sem].semqueue)) sem_array[n_sem].value++;
+	else {
+		struct list_head *task_list = list_first(&sem_array[n_sem].semqueue);
+		list_del(task_list);
+		struct task_struct * semtask = list_head_to_task_struct(task_list);
+		sched_update_queues_state(&readyqueue,semtask);
+	}
+
+	return ret;
+}
+
+int sys_sem_destroy(int n_sem) {
+	int ret = 0;
+
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
+	if (current()->PID == sem_array[n_sem].pid_owner) {
+		sem_array[n_sem].pid_owner = -1;
+		while (!list_empty(&sem_array[n_sem].semqueue)) {
+			struct list_head *task_list = list_first(&sem_array[n_sem].semqueue);
+			list_del(task_list);
+			struct task_struct * semtask = list_head_to_task_struct(task_list);
+			sched_update_queues_state(&readyqueue,semtask);
+		}
+	}
+	else if (sem_array[n_sem].pid_owner == -1){
+		ret = -1; // TODO errno 2 NOT INIT
+	}
+	else ret = -1; // TODO errno 3 NOT OWNER
+
+	return ret;
+}
+
+void *sys_sbrk(int increment) {
+	int i;
+	struct task_struct * current_pcb = current();
+	void * ret  = current_pcb->program_break;
+
+	page_table_entry * pt_current = get_PT(current_pcb);
+
+	if (increment > 0) {
+		int end = (current_pcb->program_break+increment)>>12;
+
+		for(i=(current_pcb->program_break>>12); i <= end; ++i) {
+			if (pt_current[i].entry == 0) {
+				int new_ph_pag=alloc_frame();
+				if (new_ph_pag == -1) {
+					free_frame(new_ph_pag);
+					return -ENMPHP; // TODO Comprovar return correcte
+				}
+				set_ss_pag(pt_current,i,new_ph_pag);
+			}
+		}
+		current_pcb->program_break += increment;
+	}
+	else if (increment < 0) {
+		page_table_entry * dir_current = get_DIR(current_pcb);
+		int new_pb = (current_pcb->program_break+increment)>>12;
+
+		for(i=(current_pcb->program_break>>12); i > new_pb; --i) {
+			free_frame(pt_current[i].bits.pbase_addr);
+			del_ss_pag(pt_current, i);
+		}
+		if (current_pcb->program_break+increment == HEAPSTART) {
+			free_frame(pt_current[HEAPSTART].bits.pbase_addr);
+			del_ss_pag(pt_current, i);
+		}
+
+		set_cr3(dir_current);
+		current_pcb->program_break += increment;
+	}
+
+
+	return ret;
 }
 
 

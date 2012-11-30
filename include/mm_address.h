@@ -16,6 +16,8 @@
 #define FIRST_FREE_PAG_P (NUM_PAG_KERNEL+NUM_PAG_CODE+NUM_PAG_DATA)
 
 #define CBUFFER_SIZE 1024
+#define SEM_SIZE 30
+#define HEAPSTART (NUM_PAG_KERNEL+NUM_PAG_CODE+NUM_PAG_DATA)
 
 /* Memory distribution */
 /***********************/

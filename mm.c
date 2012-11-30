@@ -52,6 +52,7 @@ for (i = 0; i< NR_TASKS; i++) {
   assigned_dir[i] = 0;
   // Es necessaria, just després es fa un set_cr3. Si no es fa això peta.
   task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
+  task[i].task.program_break = HEAPSTART<<12;
 
 }
 
