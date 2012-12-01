@@ -372,10 +372,18 @@ void *sys_sbrk(int increment) {
 
 	page_table_entry * pt_current = get_PT(current_pcb);
 
+	/* TODO El error ENOMEM a que correspon? */
+	/* TODO Preguntar que passa amb els limits del HEAP:
+	 *	> Que passa si decrementen prg_brk fins abans el HEAPSTART i reserven memoria?
+	 * 	> Que passa si excedeix el limit de pàgines assignables?
+	 * 	Ho hem de controlar?
+	 */
+
 	if (increment > 0) {
 		int end = (current_pcb->program_break+increment)>>12;
 
-		for(i=(current_pcb->program_break>>12); i <= end; ++i) {
+		for(i = (current_pcb->program_break>>12);
+					i < end || (i==end && 0!=(current_pcb->program_break+increment)%PAGE_SIZE); ++i) {
 			if (pt_current[i].entry == 0) {
 				int new_ph_pag=alloc_frame();
 				if (new_ph_pag == -1) {
@@ -385,25 +393,25 @@ void *sys_sbrk(int increment) {
 				set_ss_pag(pt_current,i,new_ph_pag);
 			}
 		}
-		current_pcb->program_break += increment;
 	}
 	else if (increment < 0) {
 		page_table_entry * dir_current = get_DIR(current_pcb);
 		int new_pb = (current_pcb->program_break+increment)>>12;
 
-		for(i=(current_pcb->program_break>>12); i > new_pb; --i) {
+		for(i = (current_pcb->program_break>>12);
+					i > new_pb || (i==new_pb && 0==(current_pcb->program_break+increment)%PAGE_SIZE); --i) {
 			free_frame(pt_current[i].bits.pbase_addr);
 			del_ss_pag(pt_current, i);
 		}
-		if (current_pcb->program_break+increment == HEAPSTART) {
+
+		if (current_pcb->program_break+increment <= (HEAPSTART<<12)) {
 			free_frame(pt_current[HEAPSTART].bits.pbase_addr);
 			del_ss_pag(pt_current, i);
 		}
 
 		set_cr3(dir_current);
-		current_pcb->program_break += increment;
 	}
-
+	current_pcb->program_break += increment;
 
 	return ret;
 }

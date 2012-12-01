@@ -179,6 +179,18 @@ void exempleFC() {
 	while(1);
 }
 
+void dinam_test() {
+	int *pointer;
+	pointer=sbrk(4097);
+	sbrk(-4096);
+	pointer[0] = 1;
+	pointer[1] = 2;
+	pointer[2] = 3;
+	pointer[3] = 4;
+	pointer[4] = 5;
+	while(1);
+}
+
 int __attribute__ ((__section__(".text.main")))
 main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
@@ -189,7 +201,10 @@ main(void) {
 	char pidc[11];*/
 
 	clearScreen();
-	exempleClone();
+
+	dinam_test();
+
+	//exempleClone();
 	//exempleFC();
 
 	/*read(0,pidc,5);
