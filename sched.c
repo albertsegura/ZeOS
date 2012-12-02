@@ -259,5 +259,5 @@ void sched_update_queues_state_RR(struct list_head* ls, struct task_struct * tas
 	else if (ls == &keyboardqueue) task->process_state = ST_BLOCKED;
 	else task->process_state = ST_BLOCKED;
 
-	list_add_tail(&task->list,ls);
+	if (task != idle_task) list_add_tail(&task->list,ls);
 }

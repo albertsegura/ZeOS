@@ -191,6 +191,29 @@ void dinam_test() {
 	while(1);
 }
 
+void semaphores_test1sub() {
+	write(1,"Clone bloquejant-me pel semaphore 0\n",36);
+	sem_wait(0);
+	//debug_task_switch();
+	write(1,"Clone desbloquejat\n",19);
+	exit();
+}
+
+void semaphores_test1() {
+	char stack[4][1024];
+	char pidc[11];
+	sem_init(0,0);
+	clone(semaphores_test1sub, &stack[0][1024]);
+	//clone(semaphores_test1sub, &stack[1][1024]);
+	write(1,"Allibero els clones si em parles: \n",35);
+	read(0,pidc,5);
+	write(1,pidc,5);
+	sem_signal(0);
+	//sem_signal(0);
+	write(1,"\nAlliberats!\n",13);
+	while(1);
+}
+
 int __attribute__ ((__section__(".text.main")))
 main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
@@ -202,7 +225,8 @@ main(void) {
 
 	clearScreen();
 
-	dinam_test();
+	semaphores_test1();
+	//dinam_test();
 
 	//exempleClone();
 	//exempleFC();

@@ -40,14 +40,17 @@ int sys_getpid()
 
 /* Funció de debug per al task_switch */
 int sys_DEBUG_tswitch() {
-	struct list_head *new_list_task = list_first(&readyqueue);
+	/*struct list_head *new_list_task = list_first(&readyqueue);
 	list_del(new_list_task);
 	struct task_struct * new_task = list_head_to_task_struct(new_list_task);
 	struct task_struct * current_task = current();
 
 	list_add_tail(&current_task->list,&readyqueue);
 
-	task_switch((union task_union*)new_task);
+	task_switch((union task_union*)new_task);*/
+
+	sched_update_queues_state(&readyqueue,current());
+	sched_switch_process();
 
 	return 0;
 }
@@ -306,7 +309,8 @@ int sys_get_stats(int pid, struct stats *st) {
 int sys_sem_init(int n_sem, unsigned int value) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
+	// TODO chech value?
 	sem_array[n_sem].pid_owner = current()->PID;
 	sem_array[n_sem].value = value;
 	INIT_LIST_HEAD(&sem_array[n_sem].semqueue);
@@ -317,7 +321,7 @@ int sys_sem_init(int n_sem, unsigned int value) {
 int sys_sem_wait(int n_sem) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
 	if (sem_array[n_sem].value <= 0) {
 		sched_update_queues_state(&sem_array[n_sem].semqueue,current());
 		sched_switch_process();
@@ -332,7 +336,7 @@ int sys_sem_wait(int n_sem) {
 int sys_sem_signal(int n_sem) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
 	if(list_empty(&sem_array[n_sem].semqueue)) sem_array[n_sem].value++;
 	else {
 		struct list_head *task_list = list_first(&sem_array[n_sem].semqueue);
@@ -368,7 +372,7 @@ int sys_sem_destroy(int n_sem) {
 void *sys_sbrk(int increment) {
 	int i;
 	struct task_struct * current_pcb = current();
-	void * ret  = current_pcb->program_break;
+	void * ret  = (void *)current_pcb->program_break;
 
 	page_table_entry * pt_current = get_PT(current_pcb);
 
@@ -388,7 +392,7 @@ void *sys_sbrk(int increment) {
 				int new_ph_pag=alloc_frame();
 				if (new_ph_pag == -1) {
 					free_frame(new_ph_pag);
-					return -ENMPHP; // TODO Comprovar return correcte
+					return (void *)-ENMPHP; // TODO Comprovar return correcte
 				}
 				set_ss_pag(pt_current,i,new_ph_pag);
 			}
