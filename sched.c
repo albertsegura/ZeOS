@@ -242,13 +242,15 @@ void sched_switch_process_RR() {
 		task->process_state = ST_RUN;
 		current()->process_state = ST_READY;
 		__asm__ __volatile__(
+				"pushl %ebx \n"
 	  		"pushl %edi \n"
 	  		"pushl %esi"
 			  );
 		task_switch((union task_union*)task);
 		__asm__ __volatile__(
 	  		"popl %esi \n"
-	  		"popl %edi"
+	  		"popl %edi \n"
+	  		"popl %ebx"
 				  );
 	}
 }
