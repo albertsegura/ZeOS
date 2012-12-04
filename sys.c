@@ -310,13 +310,15 @@ int sys_sem_init(int n_sem, unsigned int value) {
 	int ret = 0;
 
 	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
-	// TODO chech value?
+	// 1 TODO check value?
 	sem_array[n_sem].pid_owner = current()->PID;
 	sem_array[n_sem].value = value;
 	INIT_LIST_HEAD(&sem_array[n_sem].semqueue);
 
 	return ret;
 }
+
+// 2 TODO Bloquejar wait i signal si el semaphore no té owner??
 
 int sys_sem_wait(int n_sem) {
 	int ret = 0;
@@ -328,6 +330,8 @@ int sys_sem_wait(int n_sem) {
 	}
 	else sem_array[n_sem].value--;
 
+	/* Hem de mirar si després de l'espera en la cua
+	 * s'ha destruit el semafor o no, per indicar-ho al usuari*/
 	if (sem_array[n_sem].pid_owner == -1) ret = -1; // TODO errno SEM destroyed
 
 	return ret;
@@ -376,44 +380,52 @@ void *sys_sbrk(int increment) {
 
 	page_table_entry * pt_current = get_PT(current_pcb);
 
-	/* TODO El error ENOMEM a que correspon? */
+	/* 2 TODO El error ENOMEM a que correspon? */
+
 	/* TODO Preguntar que passa amb els limits del HEAP:
 	 *	> Que passa si decrementen prg_brk fins abans el HEAPSTART i reserven memoria?
 	 * 	> Que passa si excedeix el limit de pàgines assignables?
-	 * 	Ho hem de controlar?
+	 * 	Ho hem de controlar? SI
 	 */
 
 	if (increment > 0) {
 		int end = (current_pcb->program_break+increment)>>12;
 
-		for(i = (current_pcb->program_break>>12);
-					i < end || (i==end && 0!=(current_pcb->program_break+increment)%PAGE_SIZE); ++i) {
-			if (pt_current[i].entry == 0) {
-				int new_ph_pag=alloc_frame();
-				if (new_ph_pag == -1) {
-					free_frame(new_ph_pag);
-					return (void *)-ENMPHP; // TODO Comprovar return correcte
+		if (end < TOTAL_PAGES) { // Limit inferior del HEAP
+			for(i = (current_pcb->program_break>>12);
+						i < end || (i==end && 0!=(current_pcb->program_break+increment)%PAGE_SIZE); ++i) {
+				if (pt_current[i].entry == 0) {
+					int new_ph_pag=alloc_frame();
+					if (new_ph_pag == -1) {
+						free_frame(new_ph_pag);
+						return (void *)-ENMPHP; // TODO Comprovar return correcte
+					}
+					set_ss_pag(pt_current,i,new_ph_pag);
 				}
-				set_ss_pag(pt_current,i,new_ph_pag);
 			}
 		}
+		else return (void *)-1; // TODO
 	}
 	else if (increment < 0) {
 		page_table_entry * dir_current = get_DIR(current_pcb);
 		int new_pb = (current_pcb->program_break+increment)>>12;
 
-		for(i = (current_pcb->program_break>>12);
-					i > new_pb || (i==new_pb && 0==(current_pcb->program_break+increment)%PAGE_SIZE); --i) {
-			free_frame(pt_current[i].bits.pbase_addr);
-			del_ss_pag(pt_current, i);
-		}
+		if (new_pb >= HEAPSTART) { // Limit superior del HEAP
+			for(i = (current_pcb->program_break>>12);
+						i > new_pb || (i==new_pb && 0==(current_pcb->program_break+increment)%PAGE_SIZE); --i) {
+				free_frame(pt_current[i].bits.pbase_addr);
+				del_ss_pag(pt_current, i);
+			}
 
-		if (current_pcb->program_break+increment <= (HEAPSTART<<12)) {
-			free_frame(pt_current[HEAPSTART].bits.pbase_addr);
-			del_ss_pag(pt_current, i);
-		}
+			// TODO Comprovar si es necessari o no
+			if (current_pcb->program_break+increment <= (HEAPSTART<<12)) {
+				free_frame(pt_current[HEAPSTART].bits.pbase_addr);
+				del_ss_pag(pt_current, i);
+			}
 
-		set_cr3(dir_current);
+			set_cr3(dir_current);
+		}
+		else return (void *)-1; // TODO
 	}
 	current_pcb->program_break += increment;
 
