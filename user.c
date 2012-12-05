@@ -180,7 +180,7 @@ void exempleFC() {
 }
 
 void dinam_test() {
-	char * cbuff[11];
+	char cbuff[11];
 	int *pointer = 0;
 	int c = 0;
 	while ((int)pointer != -1) {
@@ -212,11 +212,10 @@ void semaphores_test1sub() {
 }
 
 void semaphores_test1() {
-	int err;
 	char stack[4][1024];
 	char pidc[11];
 	sem_init(0,0);
-	sem_signal(0);
+	//sem_signal(0);
 	clone(semaphores_test1sub, &stack[0][1024]);
 	clone(semaphores_test1sub, &stack[1][1024]);
 	write(1,"Allibero els clones si em parles: \n",35);
