@@ -309,21 +309,18 @@ int sys_get_stats(int pid, struct stats *st) {
 int sys_sem_init(int n_sem, unsigned int value) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
-	// 1 TODO check value?
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -EINVSN;
+	if (sem_array[n_sem].pid_owner != -1) return -ESINIT;
 	sem_array[n_sem].pid_owner = current()->PID;
 	sem_array[n_sem].value = value;
 	INIT_LIST_HEAD(&sem_array[n_sem].semqueue);
-
 	return ret;
 }
 
-// 2 TODO Bloquejar wait i signal si el semaphore no té owner??
-
 int sys_sem_wait(int n_sem) {
 	int ret = 0;
-
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -EINVSN;
+	if (sem_array[n_sem].pid_owner == -1) return -ENINIT;
 	if (sem_array[n_sem].value <= 0) {
 		sched_update_queues_state(&sem_array[n_sem].semqueue,current());
 		sched_switch_process();
@@ -332,7 +329,7 @@ int sys_sem_wait(int n_sem) {
 
 	/* Hem de mirar si després de l'espera en la cua
 	 * s'ha destruit el semafor o no, per indicar-ho al usuari*/
-	if (sem_array[n_sem].pid_owner == -1) ret = -1; // TODO errno SEM destroyed
+	if (sem_array[n_sem].pid_owner == -1) ret = -ESDEST;
 
 	return ret;
 }
@@ -340,7 +337,8 @@ int sys_sem_wait(int n_sem) {
 int sys_sem_signal(int n_sem) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -EINVSN;
+	if (sem_array[n_sem].pid_owner == -1) return -ENINIT;
 	if(list_empty(&sem_array[n_sem].semqueue)) sem_array[n_sem].value++;
 	else {
 		struct list_head *task_list = list_first(&sem_array[n_sem].semqueue);
@@ -355,7 +353,8 @@ int sys_sem_signal(int n_sem) {
 int sys_sem_destroy(int n_sem) {
 	int ret = 0;
 
-	if (n_sem < 0 || n_sem >= SEM_SIZE) return -1; // TODO errno
+	if (n_sem < 0 || n_sem >= SEM_SIZE) return -EINVSN;
+	if (sem_array[n_sem].pid_owner == -1) return -ENINIT;
 	if (current()->PID == sem_array[n_sem].pid_owner) {
 		sem_array[n_sem].pid_owner = -1;
 		while (!list_empty(&sem_array[n_sem].semqueue)) {
@@ -365,10 +364,7 @@ int sys_sem_destroy(int n_sem) {
 			sched_update_queues_state(&readyqueue,semtask);
 		}
 	}
-	else if (sem_array[n_sem].pid_owner == -1){
-		ret = -1; // TODO errno 2 NOT INIT
-	}
-	else ret = -1; // TODO errno 3 NOT OWNER
+	else ret = -ESNOWN;
 
 	return ret;
 }
@@ -380,52 +376,36 @@ void *sys_sbrk(int increment) {
 
 	page_table_entry * pt_current = get_PT(current_pcb);
 
-	/* 2 TODO El error ENOMEM a que correspon? */
-
-	/* TODO Preguntar que passa amb els limits del HEAP:
-	 *	> Que passa si decrementen prg_brk fins abans el HEAPSTART i reserven memoria?
-	 * 	> Que passa si excedeix el limit de pàgines assignables?
-	 * 	Ho hem de controlar? SI
-	 */
-
 	if (increment > 0) {
 		int end = (current_pcb->program_break+increment)>>12;
-
-		if (end < TOTAL_PAGES) { // Limit inferior del HEAP
+		if (end < TOTAL_PAGES) { /* Limit inferior del HEAP */
 			for(i = (current_pcb->program_break>>12);
 						i < end || (i==end && 0!=(current_pcb->program_break+increment)%PAGE_SIZE); ++i) {
 				if (pt_current[i].entry == 0) {
 					int new_ph_pag=alloc_frame();
 					if (new_ph_pag == -1) {
 						free_frame(new_ph_pag);
-						return (void *)-ENMPHP; // TODO Comprovar return correcte
+						return (void *)-ENMPHP;
 					}
 					set_ss_pag(pt_current,i,new_ph_pag);
 				}
 			}
 		}
-		else return (void *)-1; // TODO
+		else 	return (void *)-ENOMEM;
 	}
 	else if (increment < 0) {
 		page_table_entry * dir_current = get_DIR(current_pcb);
 		int new_pb = (current_pcb->program_break+increment)>>12;
 
-		if (new_pb >= HEAPSTART) { // Limit superior del HEAP
+		if (new_pb >= HEAPSTART) { /* Limit superior del HEAP */
 			for(i = (current_pcb->program_break>>12);
 						i > new_pb || (i==new_pb && 0==(current_pcb->program_break+increment)%PAGE_SIZE); --i) {
 				free_frame(pt_current[i].bits.pbase_addr);
 				del_ss_pag(pt_current, i);
 			}
-
-			// TODO Comprovar si es necessari o no
-			if (current_pcb->program_break+increment <= (HEAPSTART<<12)) {
-				free_frame(pt_current[HEAPSTART].bits.pbase_addr);
-				del_ss_pag(pt_current, i);
-			}
-
 			set_cr3(dir_current);
 		}
-		else return (void *)-1; // TODO
+		else return (void *)-EHLIMI;
 	}
 	current_pcb->program_break += increment;
 

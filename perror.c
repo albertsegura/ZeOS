@@ -15,11 +15,20 @@ char *sys_errlist[] = {
 /*	ENTASK 7		*/ "There are no more free tasks",
 /*	ENMPHP 8		*/ "There are no more free physical pages",
 /*	ENSPID 9		*/ "There is no task with the specified pid",
-/*	ENEPTE 10		*/ "There are no enough page table entries for the process"
+/*	ENEPTE 10		*/ "There are no enough page table entries for the process",
+/*	EINVSN 11 	*/ "Invalid semaphore number",
+/*	ESINIT 12 	*/ "Semaphore already initialised",
+/*	ENINIT 13 	*/ "Semaphore not initialised",
+/*	ESDEST 14 	*/ "Blocked in a destroyed semaphore",
+/*	ESNOWN 15 	*/ "Not the owner of the semaphore",
+/*	ENOMEM 16 	*/ "Not enough free memory in the heap",
+/*	EHLIMI 17  	*/ "Heap limit reached"
 // Afegir coma al penultim element, i incrementar el max
 };
 
-int sys_nerr = 10; // Max number
+
+
+int sys_nerr = 17; // Max number
 
 void perror(char *s) {
 	char *cp = sys_errlist[errno];
@@ -29,5 +38,5 @@ void perror(char *s) {
 		write(1,": ",2);
 	}
 	write(1,cp,strlen(cp));
-	
+	write(1,"\n",1);
 }

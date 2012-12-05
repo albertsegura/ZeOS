@@ -180,28 +180,43 @@ void exempleFC() {
 }
 
 void dinam_test() {
-	int *pointer;
-	pointer=sbrk(4097);
-	sbrk(-4096);
-	pointer[0] = 1;
-	pointer[1] = 2;
-	pointer[2] = 3;
-	pointer[3] = 4;
-	pointer[4] = 5;
+	char * cbuff[11];
+	int *pointer = 0;
+	int c = 0;
+	while ((int)pointer != -1) {
+		pointer =sbrk(4096);
+		++c;
+	}
+	/*pointer=sbrk(4097);
+	pointer=sbrk(-4097);*/
+	if (-1 == (int)pointer) perror("Memoria");
+	itoa(c,cbuff);
+	write(1,cbuff,strlen(cbuff));
+	/*else  {
+		pointer[0] = 1;
+		pointer[1] = 2;
+		pointer[2] = 3;
+		pointer[3] = 4;
+		pointer[4] = 5;
+	}*/
 	while(1);
 }
 
 void semaphores_test1sub() {
+	int err;
 	write(1,"Clone bloquejant-me pel semaphore 0\n",36);
-	sem_wait(0);
+	err = sem_wait(0);
+	if (err == -1 )perror("Sem");
 	write(1,"Clone desbloquejat\n",19);
 	exit();
 }
 
 void semaphores_test1() {
+	int err;
 	char stack[4][1024];
 	char pidc[11];
 	sem_init(0,0);
+	sem_signal(0);
 	clone(semaphores_test1sub, &stack[0][1024]);
 	clone(semaphores_test1sub, &stack[1][1024]);
 	write(1,"Allibero els clones si em parles: \n",35);

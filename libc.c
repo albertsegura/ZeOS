@@ -249,7 +249,10 @@ void *sbrk (int increment) {
 				"+b" (increment)
 				:"a"  (25)
 	);
-	// TODO Comprovar que el ret es passi bé etc: void *
+	if ((int)ret < 0) {
+		errno = -((int)ret);
+		ret = (void *)-1;
+	}
 	return ret;
 }
 
