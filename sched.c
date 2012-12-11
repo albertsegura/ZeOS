@@ -146,6 +146,8 @@ void init_task1(void) {
 	set_user_pages(task1_task_struct);
 	set_cr3(dir_task1);
 
+	get_newpb(task1_task_struct);
+
 	// Inicialitzacio estadistica
 	task1_task_struct->statistics.cs = 0;
 	task1_task_struct->statistics.tics = 0;
@@ -251,7 +253,7 @@ void sched_switch_process_RR() {
 	  		"popl %esi \n"
 	  		"popl %edi \n"
 	  		"popl %ebx"
-				  );
+				);
 	}
 }
 

@@ -28,6 +28,11 @@ page_table_entry pagusr_table[NR_TASKS][TOTAL_PAGES]
 /*Contador dels punters a un mateix directori de memoria. */
 Byte assigned_dir[NR_TASKS];
 
+unsigned int program_breaks[NR_TASKS];
+
+/*Contador dels punters a un mateix program break*/
+Byte pb_counter[NR_TASKS];
+
 /* TSS */
 TSS         tss; 
 
@@ -52,11 +57,19 @@ for (i = 0; i< NR_TASKS; i++) {
   assigned_dir[i] = 0;
   // Es necessaria, just després es fa un set_cr3. Si no es fa això peta.
   task[i].task.dir_pages_baseAddr = (page_table_entry *)&dir_pages[i][ENTRY_DIR_PAGES];
-  task[i].task.program_break = HEAPSTART<<12;
 
 }
 
 }
+
+void init_pb() {
+	int i;
+	for (i = 0; i< NR_TASKS; i++) {
+		program_breaks[i] = HEAPSTART<<12;
+		pb_counter[i] = 0;
+	}
+}
+
 
 /* Initializes the page table (kernel pages only) */
 void init_table_pages()
@@ -140,6 +153,7 @@ void init_mm()
   init_table_pages();
   init_frames();
   init_dir_pages();
+  init_pb();
   set_cr3(get_DIR(&task[0].task));
   set_pe_flag();
 }
@@ -284,4 +298,17 @@ void allocate_page_dir (struct task_struct *p) {
 	assigned_dir[i] = 1;
 }
 
+
+void get_newpb (struct task_struct *p) {
+	int i;
+	char found = 0;
+	for (i=0; i<NR_TASKS && !found; ++i) {
+		found = (pb_counter[i] == 0);
+	}
+	--i;
+	p->program_break = (unsigned int)&program_breaks[i];
+	program_breaks[i] = HEAPSTART<<12;
+	p->pb_count = &pb_counter[i];
+	pb_counter[i] = 1;
+}
 

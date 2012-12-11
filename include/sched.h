@@ -31,7 +31,8 @@ struct task_struct {
   enum state_t process_state;
   Byte *dir_count; /* Punter al contador de referencies al directori propi. */
   struct keyboard_info kbinfo;
-  unsigned int program_break;
+  unsigned int *program_break;
+  Byte *pb_count;
 };
 
 union task_union {

@@ -80,6 +80,7 @@ int sys_clone (void (*function)(void), void *stack) {
 	/* Copia del Stack, actualització del contador de punters del directori*/
 	copy_data(current_pcb, new_pcb, 4096);
 	*(new_pcb->dir_count) += 1;
+	*(new_pcb->pb_count) += 1;
 
 	PID = getNewPID();
 	new_pcb->PID = PID;
@@ -169,7 +170,6 @@ int sys_fork()
 		set_ss_pag(pt_new,PAG_LOG_INIT_DATA_P0+pag,frames[pag]);
 	}
 
-
 	/* Punt d.ii */
 	/* Gestió extra per evitar problemes amb Memoria dinàmica:
 	 * 	- Busquem entrades a la page_table lliures, en comptes de 20 directes
@@ -208,6 +208,34 @@ int sys_fork()
 	/* Flush de la TLB */
 	set_cr3(dir_current);
 
+
+	get_newpb(new_pcb);
+
+	/* Copia de la zona HEAP, similar a la copia de pagiens de dades */
+	free_pag = *(current_pcb->program_break)>>12+1;
+	for (pag=HEAPSTART; pag < (*(current_pcb->program_break)>>12) ||
+					(pag == (*(current_pcb->program_break)>>12) && 0 != *(current_pcb->program_break)%PAGE_SIZE);pag++) {
+			while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
+
+			if (free_pag == TOTAL_PAGES) {
+				if (pag != 0) {
+					free_pag = *(current_pcb->program_break)>>12+1;
+					--pag;
+					set_cr3(dir_current);
+				}
+				else return -ENEPTE;
+			}
+			else {
+				set_ss_pag(pt_current,free_pag,pt_new[pag].bits.pbase_addr);
+				copy_data((void *)((pag)<<12),	(void *)(free_pag<<12), PAGE_SIZE);
+				del_ss_pag(pt_current, free_pag);
+
+				free_pag++;
+			}
+	}
+	new_pcb->program_break = current_pcb->program_break;
+	set_cr3(dir_current);
+
 	/* Punt e */
 	PID = getNewPID();
 	new_pcb->PID = PID;
@@ -244,6 +272,7 @@ void sys_exit() {
 		}
 	}
 	*(current_pcb->dir_count) -= 1;
+	*(current_pcb->pb_count) -= 1;
 
 	/* Punt b */
 	sched_update_queues_state(&freequeue,current());
@@ -372,15 +401,15 @@ int sys_sem_destroy(int n_sem) {
 void *sys_sbrk(int increment) {
 	int i;
 	struct task_struct * current_pcb = current();
-	void * ret  = (void *)current_pcb->program_break;
+	void * ret  = (void *)*(current_pcb->program_break);
 
 	page_table_entry * pt_current = get_PT(current_pcb);
 
 	if (increment > 0) {
-		int end = (current_pcb->program_break+increment)>>12;
+		int end = (*(current_pcb->program_break)+increment)>>12;
 		if (end < TOTAL_PAGES) { /* Limit inferior del HEAP */
-			for(i = (current_pcb->program_break>>12);
-						i < end || (i==end && 0!=(current_pcb->program_break+increment)%PAGE_SIZE); ++i) {
+			for(i = (*(current_pcb->program_break)>>12);
+						i < end || (i==end && 0!=(*(current_pcb->program_break)+increment)%PAGE_SIZE); ++i) {
 				if (pt_current[i].entry == 0) {
 					int new_ph_pag=alloc_frame();
 					if (new_ph_pag == -1) {
@@ -395,11 +424,11 @@ void *sys_sbrk(int increment) {
 	}
 	else if (increment < 0) {
 		page_table_entry * dir_current = get_DIR(current_pcb);
-		int new_pb = (current_pcb->program_break+increment)>>12;
+		int new_pb = (*(current_pcb->program_break)+increment)>>12;
 
 		if (new_pb >= HEAPSTART) { /* Limit superior del HEAP */
-			for(i = (current_pcb->program_break>>12);
-						i > new_pb || (i==new_pb && 0==(current_pcb->program_break+increment)%PAGE_SIZE); --i) {
+			for(i = (*(current_pcb->program_break)>>12);
+						i > new_pb || (i==new_pb && 0==(*(current_pcb->program_break)+increment)%PAGE_SIZE); --i) {
 				free_frame(pt_current[i].bits.pbase_addr);
 				del_ss_pag(pt_current, i);
 			}
@@ -407,7 +436,7 @@ void *sys_sbrk(int increment) {
 		}
 		else return (void *)-EHLIMI;
 	}
-	current_pcb->program_break += increment;
+	*(current_pcb->program_break) += increment;
 
 	return ret;
 }

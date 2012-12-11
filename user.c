@@ -183,22 +183,20 @@ void dinam_test() {
 	char cbuff[11];
 	int *pointer = 0;
 	int c = 0;
-	while ((int)pointer != -1) {
+	/*while ((int)pointer != -1) {
 		pointer =sbrk(4096);
 		++c;
-	}
-	/*pointer=sbrk(4097);
-	pointer=sbrk(-4097);*/
-	if (-1 == (int)pointer) perror("Memoria");
-	itoa(c,cbuff);
-	write(1,cbuff,strlen(cbuff));
-	/*else  {
-		pointer[0] = 1;
-		pointer[1] = 2;
-		pointer[2] = 3;
-		pointer[3] = 4;
-		pointer[4] = 5;
 	}*/
+	pointer=sbrk(4097);
+	//pointer=sbrk(-4097);
+	/*if (-1 == (int)pointer) perror("Memoria");
+	itoa(c,cbuff);
+	write(1,cbuff,strlen(cbuff));*/
+	pointer[0] = 1;
+	pointer[1] = 2;
+	pointer[2] = 3;
+	pointer[3] = 4;
+	pointer[4] = 5;
 	while(1);
 }
 
@@ -238,8 +236,8 @@ main(void) {
 
 	clearScreen();
 
-	semaphores_test1();
-	//dinam_test();
+	//semaphores_test1();
+	dinam_test();
 
 	//exempleClone();
 	//exempleFC();
