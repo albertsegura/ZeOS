@@ -306,7 +306,7 @@ void get_newpb (struct task_struct *p) {
 		found = (pb_counter[i] == 0);
 	}
 	--i;
-	p->program_break = (unsigned int)&program_breaks[i];
+	p->program_break = &program_breaks[i];
 	program_breaks[i] = HEAPSTART<<12;
 	p->pb_count = &pb_counter[i];
 	pb_counter[i] = 1;

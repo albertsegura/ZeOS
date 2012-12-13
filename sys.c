@@ -209,23 +209,37 @@ int sys_fork()
 	set_cr3(dir_current);
 
 
+	/* TRACTAMENT DEL HEAP */
+
 	get_newpb(new_pcb);
 
-	/* Copia de la zona HEAP, similar a la copia de pagiens de dades */
-	free_pag = *(current_pcb->program_break)>>12+1;
+	/* Copia de la zona HEAP, similar a la copia de pagines de dades */
+	free_pag = (*(current_pcb->program_break)>>12)+1;
 	for (pag=HEAPSTART; pag < (*(current_pcb->program_break)>>12) ||
 					(pag == (*(current_pcb->program_break)>>12) && 0 != *(current_pcb->program_break)%PAGE_SIZE);pag++) {
 			while(pt_current[free_pag].entry != 0 && free_pag<TOTAL_PAGES) free_pag++;
 
 			if (free_pag == TOTAL_PAGES) {
 				if (pag != 0) {
-					free_pag = *(current_pcb->program_break)>>12+1;
+					free_pag = (*(current_pcb->program_break)>>12)+1;
 					--pag;
 					set_cr3(dir_current);
 				}
 				else return -ENEPTE;
 			}
 			else {
+				/* Obtenció del frame pel heap del fill */
+				new_ph_pag=alloc_frame();
+				if (new_ph_pag == -1)	{
+					pag--;
+					while(pag >= HEAPSTART) free_frame(pt_new[pag--].bits.pbase_addr);
+					return -ENMPHP;
+				}
+
+				/* Assignació del frame nou, al procés fill */
+				set_ss_pag(pt_new,pag,new_ph_pag);
+
+				/* Copia del Heap: es necessari posar el frame en el pt del pare per a fer-ho */
 				set_ss_pag(pt_current,free_pag,pt_new[pag].bits.pbase_addr);
 				copy_data((void *)((pag)<<12),	(void *)(free_pag<<12), PAGE_SIZE);
 				del_ss_pag(pt_current, free_pag);
@@ -233,7 +247,6 @@ int sys_fork()
 				free_pag++;
 			}
 	}
-	new_pcb->program_break = current_pcb->program_break;
 	set_cr3(dir_current);
 
 	/* Punt e */
@@ -265,7 +278,7 @@ void sys_exit() {
 	struct task_struct * current_pcb = current();
 	page_table_entry * pt_current = get_PT(current_pcb);
 
-	/* Allibera les 20 de Data i la resta, a partir de l'entrada 256+8 */
+	/* Allibera les 20 de Data i la resta (HEAP), a partir de l'entrada 256+8 */
 	if (*(current_pcb->dir_count) == 1) {
 		for (pag=PAG_LOG_INIT_DATA_P0;pag<TOTAL_PAGES ;pag++){
 			free_frame(pt_current[pag].bits.pbase_addr);

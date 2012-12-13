@@ -29,8 +29,14 @@ struct task_struct {
   unsigned long kernel_esp;
   struct stats statistics;
   enum state_t process_state;
+
+  /* Utilitzat per implementar els threads*/
   Byte *dir_count; /* Punter al contador de referencies al directori propi. */
+
+  /* Utilitzat per a la implementació del read*/
   struct keyboard_info kbinfo;
+
+  /* Utilitzat pel control de la zona HEAP */
   unsigned int *program_break;
   Byte *pb_count;
 };

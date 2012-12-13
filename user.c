@@ -179,6 +179,7 @@ void exempleFC() {
 	while(1);
 }
 
+/* Test de HEAP en unic procés */
 void dinam_test() {
 	char cbuff[11];
 	int *pointer = 0;
@@ -225,6 +226,70 @@ void semaphores_test1() {
 	while(1);
 }
 
+/* Test de HEAP & FORK */
+void dinam_test2() {
+	int *pointer = 0;
+
+	pointer=sbrk(10);
+	pointer[0] = 1;
+	pointer[1] = 2;
+	pointer[2] = 3;
+	pointer[3] = 4;
+
+	pid = fork();
+	if (pid > 0) { // Pare
+		pointer=sbrk(4097);
+		pointer[2] = 1;
+		pointer[3] = 1;
+	}
+	else if(pid == 0) {
+		pointer=sbrk(0);
+		pointer[2] = 2;
+		pointer[3] = 2;
+		pointer=sbrk(9000);
+		pointer[2] = 3;
+		pointer[3] = 4;
+	}
+
+	while(1);
+}
+
+
+/* Funció del thread */
+void subdinam_test3() {
+	int *pointer = 0;
+	int pid = getpid();
+	pointer=sbrk(0);
+	pointer[2] = pid;
+	pointer[3] = pid;
+
+	pointer=sbrk(4097);
+
+	while(1);
+}
+
+/* Test de HEAP & CLONE */
+void dinam_test3() {
+	char stack[4][1024];
+	int *pointer = 0;
+
+	pointer=sbrk(10);
+	pointer[0] = 1;
+	pointer[1] = 2;
+	pointer[2] = 3;
+	pointer[3] = 4;
+
+	clone(subdinam_test3, &stack[0][1024]);
+	clone(subdinam_test3, &stack[1][1024]);
+
+	pointer=sbrk(4097);
+	pointer[2] = 1;
+	pointer[3] = 1;
+
+	while(1);
+}
+
+
 int __attribute__ ((__section__(".text.main")))
 main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
@@ -237,7 +302,9 @@ main(void) {
 	clearScreen();
 
 	//semaphores_test1();
-	dinam_test();
+	//dinam_test();
+	//dinam_test2();
+	dinam_test3();
 
 	//exempleClone();
 	//exempleFC();
