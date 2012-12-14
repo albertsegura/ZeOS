@@ -230,7 +230,7 @@ void semaphores_test1() {
 void dinam_test2() {
 	int *pointer = 0;
 
-	pointer=sbrk(10);
+	pointer=sbrk(16);
 	pointer[0] = 1;
 	pointer[1] = 2;
 	pointer[2] = 3;
@@ -273,7 +273,7 @@ void dinam_test3() {
 	char stack[4][1024];
 	int *pointer = 0;
 
-	pointer=sbrk(10);
+	pointer=sbrk(16);
 	pointer[0] = 1;
 	pointer[1] = 2;
 	pointer[2] = 3;
@@ -290,6 +290,41 @@ void dinam_test3() {
 }
 
 
+void subdinam_test4() {
+	sem_signal(0);
+	exit();
+
+	while(1);
+}
+
+void dinam_test4() {
+	char stack[4][1024];
+	int *pointer = 0;
+
+	sem_init(0,0);
+	/*
+	pointer=sbrk(16);
+	pointer[0] = 1;
+	pointer[1] = 2;
+	pointer[2] = 3;
+	pointer[3] = 4;
+*/
+
+	pid = fork();
+	if (pid > 0) { // Pare
+		sem_wait(0);
+	}
+	else if(pid == 0) {
+		pointer=sbrk(4096);
+		clone(subdinam_test4, &stack[0][1024]);
+		exit();
+	}
+	pointer=sbrk(4096);
+	exit();
+
+	while(1);
+}
+
 int __attribute__ ((__section__(".text.main")))
 main(void) {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
@@ -304,7 +339,8 @@ main(void) {
 	//semaphores_test1();
 	//dinam_test();
 	//dinam_test2();
-	dinam_test3();
+	//dinam_test3();
+	dinam_test4();
 
 	//exempleClone();
 	//exempleFC();

@@ -212,6 +212,7 @@ int sys_fork()
 	/* TRACTAMENT DEL HEAP */
 
 	get_newpb(new_pcb);
+	*(new_pcb->program_break) = *(current_pcb->program_break);
 
 	/* Copia de la zona HEAP, similar a la copia de pagines de dades */
 	free_pag = (*(current_pcb->program_break)>>12)+1;
